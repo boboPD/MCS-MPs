@@ -1,0 +1,6 @@
+variables to remove -
+Pool_QC
+Garage_Cars (Garage area encapsulates this info) aggregate(Garage_Area, by=list(Garage_Cars), FUN=mean)
+Garage_Cond (highly correlated with 
+
+remove pool quality variable (Pool_QC) nearly all houses do not have pools and also since pool area would encapsulate this information.

@@ -1,0 +1,29 @@
+---
+title: "Project 1 - Report"
+output: html_notebook
+---
+
+### Removing redundant columns
+After going through the dataset I found the following columns to be redundant. They were either mostly missing or highly correlated with other variables
+
+##### Garage Area
+This variable is correlated with garage cars. It is highly unlikely that a garage with a capacity of 4 cars would have a significantly different area than other garages with similar capacity.
+
+```{r}
+summarise(group_by(raw_data, Garage_Cars), mean=mean(Garage_Area), sd=sd(Garage_Area), count = n())
+```
+
+##### Garage Condition
+This variable is highly correlated with garage quality. In fact from the table below it looks like they are measuring the same quantity. Mostof the values are along the principal diagonal or on values that are very similar, like 34 rows where the garage condition is "Typical" and the garage quality is "Fair".
+
+```{r}
+table(Garage_Cond, Garage_Qual)
+```
+
+##### BsmtFin SF 2
+there are only 351 rows where this is non zero and they don't seem to have an effect on the sale price
+
+```{r}
+ggplot(raw_data) + geom_point(mapping = aes(BsmtFin_SF_2, log10(Sale_Price)))
+```
+
