@@ -1,6 +1,28 @@
 variables to remove -
-Pool_QC
-Garage_Cars (Garage area encapsulates this info) aggregate(Garage_Area, by=list(Garage_Cars), FUN=mean)
-Garage_Cond (highly correlated with 
+Garage_Area (Garage area encapsulates this info) aggregate(Garage_Area, by=list(Garage_Cars), FUN=mean)
+Garage_Cond (highly correlated with Garage_Qual)
+BsmtFin_SF_1, Bsmt_Unf_SF, Bsmt_Half_Bath (small correlation with sale price)
+Latitude, Longitude (Neighbourhood is better indicator)
+
+Condition 2 (nearly all have same value)
+Bsmt_Cond (nearly all values belong to typical: 2616)
+Pool_Area (nearly all have same value)
+Land_Slope (nearly all have same value)
+Bldg_type (nearly all have same value)
+Utilities (nearly all have same value)
+Roof_Matl (nearly all have same value)
+Heating (nearly all same value)
+Street (nearly all have same value)
+Misc_Feature (nearly all have same value)
+Misc_Val (nearly all zero)
+
+Overall_Cond (same as overall_qual)
+Year_Built (add age instead)
+
 
 remove pool quality variable (Pool_QC) nearly all houses do not have pools and also since pool area would encapsulate this information.
+
+Cleaning
+if Garage_Yr_Blt < Year_Built || NA : Garage_Yr_Blt = Year_Built
+
+get_colnames = function(pref){ colnames(raw_data)[grepl(pref, colnames(raw_data))] }
