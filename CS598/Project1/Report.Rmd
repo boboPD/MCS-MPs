@@ -1,29 +1,59 @@
 ---
 title: "Project 1 - Report"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
 ---
 
-### Removing redundant columns
-After going through the dataset I found the following columns to be redundant. They were either mostly missing or highly correlated with other variables
+###  Data preprocessing
 
-##### Garage Area
-This variable is correlated with garage cars. It is highly unlikely that a garage with a capacity of 4 cars would have a significantly different area than other garages with similar capacity.
+#### Removing redundant columns
+After going through the dataset I found a lot of the columns to be redundant. I have listed them below with the reasons for their removal
 
-```{r}
-summarise(group_by(raw_data, Garage_Cars), mean=mean(Garage_Area), sd=sd(Garage_Area), count = n())
-```
+| Variables | Reason for removal |
+| ---- | ---- |
+| Garage_Area | This variable is correlated with garage cars |
+| Garage_Cond | This variable is highly correlated with garage quality |
+| BsmtFin_SF_1, Bsmt_Unf_SF, Bsmt_Half_Bath, BsmtFin_SF_2 | small correlation with sale price |
+| Overall_Cond | Highly correlated with Overall_Qual |
+| Year_Built | Added an age variable instead |
+| Latitude, Longitude | Neighbourhood is better indicator |
+| Pool_Qc, Pool_Area | Very few houses had pools so it wasn't a strong indicator |
 
-##### Garage Condition
-This variable is highly correlated with garage quality. In fact from the table below it looks like they are measuring the same quantity. Mostof the values are along the principal diagonal or on values that are very similar, like 34 rows where the garage condition is "Typical" and the garage quality is "Fair".
+The following variables were removed because they had the same value for nearly all of the rows:
 
-```{r}
-table(Garage_Cond, Garage_Qual)
-```
+Condition 2, Bsmt_Cond, Pool_Area, Land_Slope, Bldg_type, Utilities, Roof_Matl, Heating, Street, Misc_Feature, Misc_Val
 
-##### BsmtFin SF 2
-there are only 351 rows where this is non zero and they don't seem to have an effect on the sale price
+#### Data Cleaning
+Some of the columns seemed to have erroneous values and had to be fixed:
 
-```{r}
-ggplot(raw_data) + geom_point(mapping = aes(BsmtFin_SF_2, log10(Sale_Price)))
-```
+1. In some cases the Year_Built was greater than the Year_Sold which makes no sense so I just replaced those instances with Year_Sold
+1. Garage_Yr_Blt had NAs mostly when the house did not have a Garage and so I replaced them with 0
+1. All ordinal columns in the data were converted to integers to indicate order with Excellent = 5 going down to Poor = 1
+1. Winsorised some of the columns according to the advice on Piazza and used the quantile values from the training set to winsorise the test set 
+1. Create dummy variables for all nominal columns. Used the levels from the training data to create the dummies for the test set
 
+### Tuning parameters
+
+##### XGBoost
+In order to tune the parameters of the boosted tree I used the train method in the caret package that can evaluate multiple parameters in one shot. I used 10 fold cross validation on one set of training data to find the best values for the eta, subsample, max_depth. Below is a table of the search space each paramter and the result:
+
+| Paramter | Search space | selected value |
+| --- | --- | --- |
+| eta | 0.1, 0.05, 0.01 | 0.05 |
+| max_depth | 2, 3, 4, 5, 6 | 4 |
+| subsample | 0.5, 0.75, 1 | 0.75 |
+
+My model contains 5000 trees.
+
+##### Linear model
+I used cv.glmnet to train a lasso model and used the min value of the lambda as my final choice since it gave the lowest RMSE across all the 10 splits. I also tried a few random values of the alpha (0.2, 0.5, 0.8) to train an elastic net model but lasso was always performing the best for me.
+
+### Learnings
+
+I guess the most important thing that I learnt in this exercise is the importance of feature engineering. Really looking at the features to understand what aspects of the dependent variable they encode. I removed a lot more variables than the sample code shared on piazza with no significant loss in accuracy. I did not have the time to go through every variable and I believe had I done so I could have eliminated even more. I really think only about 15-20 of the nearly 80 predictors are actually useful in prediction. 
+
+### Results
+
+I am running this code on a Windows machine with R v4.0.2, 16GB RAM and an Intel i7 2.8Ghz dual core CPU. Below are my test results on the 10 train/test splits. The time shown below was for the entire training + prediction cycle. It does not include the time taken to evaluate the errors.
