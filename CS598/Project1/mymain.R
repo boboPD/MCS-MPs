@@ -99,45 +99,51 @@ winsorise = function(df, quan){
   df
 }
 
-start_time = Sys.time()
+make_predictions = function(train, test){
+  start_time = Sys.time()
+  
+  train_lvls = get_levels_for_categorical_vars(train)
+  train_quans = get_quantiles(train)
+  
+  train = common_preprocessing(train)
+  train = winsorise(train, train_quans)
+  train = create_dummies(train, train_lvls)
+  train$Sale_Price = log(train$Sale_Price)
+  
+  train.matrix = as.matrix(select(train, -Sale_Price))
+  train.output = as.vector(train$Sale_Price)
+  
+  #training xgboost model
+  xgbmodel = xgboost(data = train.matrix, label = train.output, nrounds = 5000, max_depth=4, 
+                     eta=0.05, subsample=0.75, gamma=0, verbose = F)
+  
+  #training linear model
+  lin_model = cv.glmnet(train.matrix, train.output, alpha = 1)
+  
+  #preprocess test data
+  test = common_preprocessing(test)
+  test = winsorise(test, train_quans)
+  test = create_dummies(test, train_lvls)
+  
+  #Make predictions
+  preds1 = predict(xgbmodel, as.matrix(test))
+  preds2 = predict(lin_model, as.matrix(test), s=lin_model$lambda.min)
+  
+  end_time = Sys.time()
+  
+  return(list(xgb=preds1, lasso=as.vector(preds2), time=(end_time - start_time)))
+}
 
-# Read and pre-process training data
-train = read.csv("train.csv")
 
-train_lvls = get_levels_for_categorical_vars(train)
-train_quans = get_quantiles(train)
-
-train = common_preprocessing(train)
-train = winsorise(train, train_quans)
-train = create_dummies(train, train_lvls)
-train$Sale_Price = log(train$Sale_Price)
-
-train.matrix = as.matrix(select(train, -Sale_Price))
-train.output = as.vector(train$Sale_Price)
-
-#training xgboost model
-xgbmodel = xgboost(data = train.matrix, label = train.output, nrounds = 5000, max_depth=4, 
-                   eta=0.05, subsample=0.75, gamma=0, verbose = F)
-
-#training linear model
-lin_model = cv.glmnet(train.matrix, train.output, alpha = 1)
-
-#Read and pre-process test data
+raw_train_data = read.csv("train.csv")
 raw_test_data = read.csv("test.csv")
 
-test = common_preprocessing(raw_test_data)
-test = winsorise(test, train_quans)
-test = create_dummies(test, train_lvls)
+preds = make_predictions(raw_train_data, raw_test_data)
 
-#Make predictions
-preds1 = predict(xgbmodel, as.matrix(test))
-preds2 = predict(lin_model, as.matrix(test), s=lin_model$lambda.min)
-
-submission1 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp(preds1))
-submission2 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp(as.vector(preds2)))
-
-end_time = Sys.time()
-print(end_time - start_time)
+submission1 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp(preds$xgb))
+submission2 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp((preds$lasso)))
 
 write.csv(submission1, file = "mysubmission1.txt", row.names = F)
 write.csv(submission2, file = "mysubmission2.txt", row.names = F)
+
+print(preds$time)
