@@ -3,6 +3,8 @@ library(rpart)
 library(dplyr)
 library(xgboost)
 
+options(stringsAsFactors = F)
+
 recode_ordinals = function(df){
   quality = c(Excellent=5, Good=4, Typical=3, Fair=2, Poor=1)
   bsmt_lq_q = c(GLQ=6, ALQ=5, BLQ=4, Rec=3, LwQ=2, Unf=1, No_Basement=0)
