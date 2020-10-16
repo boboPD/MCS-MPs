@@ -1,6 +1,7 @@
 library(glmnet)
 library(rpart)
 library(dplyr)
+library(xgboost)
 
 recode_ordinals = function(df){
   quality = c(Excellent=5, Good=4, Typical=3, Fair=2, Poor=1)
@@ -31,28 +32,22 @@ recode_ordinals = function(df){
   df
 }
 
-create_dummies_train = function(df){
-
-  #Creating dummy variables
+get_levels_for_categorical_vars = function(df){
   cat_vars = colnames(select(df, where(is.character)))
+  training_lvls = list()
   for(v in cat_vars){
     lvls = sort(unique(df[, v]))
-    lvls = gsub("[^A-Za-z0-9_]", "_", lvls)
-    training_lvls[[v]] <<- lvls
-    for(l in lvls){
-      col_name = paste(v, l, sep = "_")
-      df[col_name] = ifelse(df[, v]==l, 1, 0)
-    }
-    df = select(df, -all_of(v))
+    lvls = gsub("[^A-Za-z0-9_]", "_", lvls) #getting rid of random chars in the strings
+    training_lvls[[v]] = lvls
   }
   
-  df
+  training_lvls
 }
 
-create_dummies_test = function(df){
+create_dummies = function(df, levels){
   cat_vars = colnames(select(df, where(is.character)))
   for(v in cat_vars){
-    for(l in training_lvls[[v]]){
+    for(l in levels[[v]]){
       col_name = paste(v, l, sep = "_")
       df[col_name] = ifelse(df[, v]==l, 1, 0)
     }
@@ -73,8 +68,8 @@ common_preprocessing = function(rawdata){
   cleandata["Age"] = cleandata$Year_Sold - cleandata$Year_Built
   
   #dropping unwanted columns
-  drop_vars = c("Garage_Area", "Garage_Cond", "Condition_2", "Bsmt_Cond", "Pool_Area", "Land_Slope", "Bldg_type", "Utilities", "Roof_Matl", "Heating", "Street", "Pool_QC", "Overall_Cond", "Year_Built", "BsmtFin_SF_1", 
-                "Bsmt_Unf_SF", "Bsmt_Half_Bath", "Latitude", "Longitude", "Misc_Feature", "Misc_Val", "Three_season_porch")
+  drop_vars = c("PID", "Garage_Area", "Garage_Cond", "Condition_2", "Bsmt_Cond", "Pool_Area", "Land_Slope", "Bldg_type", "Utilities", "Roof_Matl", "Heating", "Street", "Pool_QC", "Overall_Cond", "Year_Built", "BsmtFin_SF_1", 
+                "Bsmt_Unf_SF", "Bsmt_Half_Bath", "Latitude", "Longitude", "Misc_Feature", "Misc_Val", "Three_season_porch", "BsmtFin_SF_2")
   cleandata = cleandata[, !(colnames(cleandata) %in% drop_vars)]
   
   cleandata = recode_ordinals(cleandata)
@@ -82,32 +77,65 @@ common_preprocessing = function(rawdata){
   cleandata
 }
 
-winsorise = function(df){
-  winsor.vars <- c("Lot_Frontage", "Lot_Area", "Mas_Vnr_Area", "BsmtFin_SF_2", "Total_Bsmt_SF", "Second_Flr_SF", 'First_Flr_SF', "Gr_Liv_Area", "Wood_Deck_SF", "Open_Porch_SF", "Enclosed_Porch", "Screen_Porch")
-  quan.value <- 0.95
+get_quantiles = function(df){
+  winsor.vars <- c("Lot_Frontage", "Lot_Area", "Mas_Vnr_Area", "Total_Bsmt_SF", "Second_Flr_SF", 'First_Flr_SF', "Gr_Liv_Area", "Wood_Deck_SF", "Open_Porch_SF", "Enclosed_Porch", "Screen_Porch")
+  quantiles = list()
+  for(var in winsor.vars){
+    myquan <- quantile(df[, var], probs = 0.95, na.rm = TRUE)
+    quantiles[var] = myquan
+  }
+}
+
+winsorise = function(df, quan){
+  winsor.vars = names(quan)
   for(var in winsor.vars){
     tmp <- df[, var]
-    myquan <- quantile(tmp, probs = quan.value, na.rm = TRUE)
-    tmp[tmp > myquan] <- myquan
+    tmp[tmp > quan[[var]]] <- quan[[var]]
     df[, var] <- tmp
   }
   
   df
 }
 
+start_time = Sys.time()
+
 # Read and pre-process training data
-training_lvls = list() #list to hold the levels of the factors in the training data so it can be used for creating the dummies in test data
 train = read.csv("train.csv")
+
+train_lvls = get_levels_for_categorical_vars(train)
+train_quans = get_quantiles(train)
+
 train = common_preprocessing(train)
-train = winsorise(train)
-train = create_dummies_train(train)
+train = winsorise(train, train_quans)
+train = create_dummies(train, train_lvls)
 train$Sale_Price = log(train$Sale_Price)
 
-#Create the models
+train.matrix = as.matrix(select(train, -Sale_Price))
+train.output = as.vector(train$Sale_Price)
+
+#training xgboost model
+xgbmodel = xgboost(data = train.matrix, label = train.output, nrounds = 5000, max_depth=4, 
+                   eta=0.05, subsample=0.75, gamma=0, verbose = F)
+
+#training linear model
+lin_model = cv.glmnet(train.matrix, train.output, alpha = 1)
 
 #Read and pre-process test data
-test_data = read.csv("test.csv")
-test_data = common_preprocessing(test_data)
-test_data = create_dummies_test(test_data)
-test_out = read.csv("test_y.csv")
-test_out$Sale_Price = log(test_out$Sale_Price)
+raw_test_data = read.csv("test.csv")
+
+test = common_preprocessing(raw_test_data)
+test = winsorise(test, train_quans)
+test = create_dummies(test, train_lvls)
+
+#Make predictions
+preds1 = predict(xgbmodel, as.matrix(test))
+preds2 = predict(lin_model, as.matrix(test), s=lin_model$lambda.min)
+
+submission1 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp(preds1))
+submission2 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp(as.vector(preds2)))
+
+end_time = Sys.time()
+print(end_time - start_time)
+
+write.csv(submission1, file = "mysubmission1.txt", row.names = F)
+write.csv(submission2, file = "mysubmission2.txt", row.names = F)
