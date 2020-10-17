@@ -5,7 +5,6 @@ output:
     df_print: paged
   pdf_document: default
 ---
-
 ###  Data preprocessing
 
 #### Removing redundant columns
@@ -37,18 +36,20 @@ Some of the columns seemed to have erroneous values and had to be fixed:
 ### Tuning parameters
 
 ##### XGBoost
-In order to tune the parameters of the boosted tree I used the train method in the caret package that can evaluate multiple parameters in one shot. I used 10 fold cross validation on one set of training data to find the best values for the eta, subsample, max_depth. Below is a table of the search space each paramter and the result:
+In order to tune the parameters of the boosted tree I used the train method in the caret package that can evaluate multiple parameters in one shot. I used 10 fold cross validation on one set of training data to find the best values for the eta, subsample, max_depth. Below is a table of the search space for each parameter and the result:
 
-| Paramter | Search space | selected value |
+| Parameter | Search space | selected value |
 | --- | --- | --- |
-| eta | 0.1, 0.05, 0.01 | 0.05 |
-| max_depth | 2, 3, 4, 5, 6 | 4 |
-| subsample | 0.5, 0.75, 1 | 0.75 |
+| eta (learning rate) | 0.1, 0.05, 0.01 | 0.05 |
+| max_depth (tree depth) | 2, 3, 4, 5, 6 | 4 |
+| subsample (fraction of rows randomly chosen to train tree) | 0.5, 0.75, 1 | 0.75 |
 
-My model contains 5000 trees.
+My model contains 2000 trees. I had tried a few values going from 5000 down to 1000 decreasing by 1000 at each step. I thought 2000 gave a good compromise between accuracy and running time. Beyond 2000 the difference in the actual predictions was around 1 dollar which is insignificant considering the price of a house.
 
 ##### Linear model
 I used cv.glmnet to train a lasso model and used the min value of the lambda as my final choice since it gave the lowest RMSE across all the 10 splits. I also tried a few random values of the alpha (0.2, 0.5, 0.8) to train an elastic net model but lasso was always performing the best for me.
+
+I was unable to bring the RMSE for the linear model under the benchmark even by using procedures exactly as described in the sample code. I am not sure why. That is why I decided to stick with my version.
 
 ### Learnings
 
@@ -56,4 +57,9 @@ I guess the most important thing that I learnt in this exercise is the importanc
 
 ### Results
 
-I am running this code on a Windows machine with R v4.0.2, 16GB RAM and an Intel i7 2.8Ghz dual core CPU. Below are my test results on the 10 train/test splits. The time shown below was for the entire training + prediction cycle. It does not include the time taken to evaluate the errors.
+I am running this code on a Windows machine with R v4.0.2, 16GB RAM and an Intel i7 2.8Ghz dual core CPU. Below are my test results on the 10 train/test splits. The time shown below was for the entire training + prediction cycle. It does not include the time taken to evaluate the errors. It is measured in secs
+
+```{r echo=FALSE}
+results
+```
+

@@ -102,10 +102,6 @@ get_predictions_xgboost = function(train, test){
   #process train data
   train = common_preprocessing(train)
   
-  winsor.vars = c("Lot_Frontage", "Lot_Area", "Mas_Vnr_Area", "Total_Bsmt_SF", "Second_Flr_SF", 'First_Flr_SF', "Gr_Liv_Area", "Wood_Deck_SF", "Open_Porch_SF", "Enclosed_Porch", "Screen_Porch")
-  train_quans = get_quantiles(train, winsor.vars)
-  train = winsorise(train, train_quans)
-  
   train_lvls = get_levels_for_categorical_vars(train)
   train = create_dummies(train, train_lvls)
   
@@ -115,13 +111,12 @@ get_predictions_xgboost = function(train, test){
   train.output = as.vector(train$Sale_Price)
   
   #train model
-  xgbmodel = xgboost(data = train.matrix, label = train.output, nrounds = 5000, max_depth=4, 
+  xgbmodel = xgboost(data = train.matrix, label = train.output, nrounds = 2000, max_depth=4, 
                      eta=0.05, subsample=0.75, gamma=0, verbose = F)
   
   #process test data
   test = test[, !(colnames(test) %in% drop_vars)]
   test = common_preprocessing(test)
-  test = winsorise(test, train_quans)
   test = create_dummies(test, train_lvls)
   
   #return predictions
@@ -148,8 +143,6 @@ get_predictions_linear = function(train, test){
   
   #training linear model
   cv.out <- cv.glmnet(train.matrix, train.output, alpha = 1)
-  sel.vars <- predict(cv.out, type="nonzero", s = cv.out$lambda.1se)$X1
-  cv.out <- cv.glmnet(train.matrix[, sel.vars], train.output, alpha = 0)
   
   #preprocess test data
   test = test[, !(colnames(test) %in% drop_vars)]
@@ -157,34 +150,17 @@ get_predictions_linear = function(train, test){
   test = winsorise(test, train_quans)
   test = create_dummies(test, train_lvls)
   
-  as.vector(predict(cv.out, as.matrix(test[, sel.vars]), s=cv.out$lambda.min))
+  as.vector(predict(cv.out, as.matrix(test), s=cv.out$lambda.min))
 }
 
-data <- read.csv("Ames_data.csv")
-testIDs <- read.table("project1_testIDs.dat")
-results = data.frame(xgb=rep(0,10), lasso=rep(0,10), time=rep(0,10))
-for(j in 1:10){
-  raw_train_data <- data[-testIDs[,j], ]
-  raw_test_data <- data[testIDs[,j], ]
-  test_y <- log(raw_test_data[, 83])
-  raw_test_data <- raw_test_data[, -83]
-  
-  start_time = Sys.time()
-  #pred_xgb = get_predictions_xgboost(raw_train_data, raw_test_data)
-  pred_xgb = rep(0, 879)
-  pred_lin = get_predictions_linear(raw_train_data, raw_test_data)
-  end_time = Sys.time()
-  
-  err1 = sqrt(sum((pred_xgb-test_y)^2)/length(test_y))
-  err2 = sqrt(sum((pred_lin-test_y)^2)/length(test_y))
-  
-  results[j, ] = c(err1, err2, (end_time - start_time))
-}
+raw_train_data = read.csv("train.csv")
+raw_test_data = read.csv("test.csv")
 
-#submission1 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp(preds$xgb))
-#submission2 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp((preds$lasso)))
+pred_xgb = get_predictions_xgboost(raw_train_data, raw_test_data)
+pred_lin = get_predictions_linear(raw_train_data, raw_test_data)
 
-#write.csv(submission1, file = "mysubmission1.txt", row.names = F)
-#write.csv(submission2, file = "mysubmission2.txt", row.names = F)
+submission1 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp(pred_xgb))
+submission2 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp(pred_lin))
 
-#print(preds$time)
+write.csv(submission1, file = "mysubmission1.txt", row.names = F)
+write.csv(submission2, file = "mysubmission2.txt", row.names = F)
