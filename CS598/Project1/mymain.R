@@ -68,42 +68,75 @@ common_preprocessing = function(rawdata){
   
   #Creating an age column instead of using Year_Built
   cleandata["Age"] = cleandata$Year_Sold - cleandata$Year_Built
-  
-  #dropping unwanted columns
-  drop_vars = c("PID", "Garage_Area", "Garage_Cond", "Condition_2", "Bsmt_Cond", "Pool_Area", "Land_Slope", "Bldg_type", "Utilities", "Roof_Matl", "Heating", "Street", "Pool_QC", "Overall_Cond", "Year_Built", "BsmtFin_SF_1", 
-                "Bsmt_Unf_SF", "Bsmt_Half_Bath", "Latitude", "Longitude", "Misc_Feature", "Misc_Val", "Three_season_porch", "BsmtFin_SF_2")
-  cleandata = cleandata[, !(colnames(cleandata) %in% drop_vars)]
+  cleandata = select(cleandata, -Year_Built)
   
   cleandata = recode_ordinals(cleandata)
   
   cleandata
 }
 
-get_quantiles = function(df){
-  winsor.vars <- c("Lot_Frontage", "Lot_Area", "Mas_Vnr_Area", "Total_Bsmt_SF", "Second_Flr_SF", 'First_Flr_SF', "Gr_Liv_Area", "Wood_Deck_SF", "Open_Porch_SF", "Enclosed_Porch", "Screen_Porch")
+get_quantiles = function(df, winsor.vars){
   quantiles = list()
   for(var in winsor.vars){
-    myquan <- quantile(df[, var], probs = 0.95, na.rm = TRUE)
+    myquan = quantile(df[, var], probs = 0.95, na.rm = TRUE)
     quantiles[var] = myquan
   }
 }
 
 winsorise = function(df, quan){
-  winsor.vars = names(quan)
-  for(var in winsor.vars){
-    tmp <- df[, var]
-    tmp[tmp > quan[[var]]] <- quan[[var]]
-    df[, var] <- tmp
+  for(var in names(quan)){
+    tmp = df[, var]
+    tmp[tmp > quan[[var]]] = quan[[var]]
+    df[, var] = tmp
   }
   
   df
 }
 
-make_predictions = function(train, test){
-  start_time = Sys.time()
+get_predictions_xgboost = function(train, test){
+  #dropping unwanted columns
+  drop_vars = c("PID", "Garage_Area", "Garage_Cond", "Condition_2", "Bsmt_Cond", "Pool_Area", "Land_Slope", "Bldg_type", "Utilities", "Roof_Matl", "Heating", "Street", "Pool_QC", "Overall_Cond", "BsmtFin_SF_1", 
+                "Bsmt_Unf_SF", "Bsmt_Half_Bath", "Latitude", "Longitude", "Misc_Feature", "Misc_Val", "Three_season_porch", "BsmtFin_SF_2")
+  train = train[, !(colnames(train) %in% drop_vars)]
+  
+  #process train data
+  train = common_preprocessing(train)
+  
+  winsor.vars = c("Lot_Frontage", "Lot_Area", "Mas_Vnr_Area", "Total_Bsmt_SF", "Second_Flr_SF", 'First_Flr_SF', "Gr_Liv_Area", "Wood_Deck_SF", "Open_Porch_SF", "Enclosed_Porch", "Screen_Porch")
+  train_quans = get_quantiles(train, winsor.vars)
+  train = winsorise(train, train_quans)
   
   train_lvls = get_levels_for_categorical_vars(train)
-  train_quans = get_quantiles(train)
+  train = create_dummies(train, train_lvls)
+  
+  train$Sale_Price = log(train$Sale_Price)
+  
+  train.matrix = as.matrix(select(train, -Sale_Price))
+  train.output = as.vector(train$Sale_Price)
+  
+  #train model
+  xgbmodel = xgboost(data = train.matrix, label = train.output, nrounds = 5000, max_depth=4, 
+                     eta=0.05, subsample=0.75, gamma=0, verbose = F)
+  
+  #process test data
+  test = test[, !(colnames(test) %in% drop_vars)]
+  test = common_preprocessing(test)
+  test = winsorise(test, train_quans)
+  test = create_dummies(test, train_lvls)
+  
+  #return predictions
+  predict(xgbmodel, as.matrix(test))
+}
+
+get_predictions_linear = function(train, test){
+  drop_vars = c('Street', 'Utilities',  'Condition_2', 'Roof_Matl', 'Heating', 'Pool_QC', 'Misc_Feature', 'Low_Qual_Fin_SF', 'Pool_Area', 'Longitude','Latitude')
+  train = train[, !(colnames(train) %in% drop_vars)]
+  
+  #process train data
+  winsor.vars = c("Lot_Frontage", "Lot_Area", "Mas_Vnr_Area", "BsmtFin_SF_2", "Bsmt_Unf_SF", "Total_Bsmt_SF", "Second_Flr_SF", 'First_Flr_SF', "Gr_Liv_Area", 
+                   "Garage_Area", "Wood_Deck_SF", "Open_Porch_SF", "Enclosed_Porch", "Three_season_porch", "Screen_Porch", "Misc_Val")
+  train_lvls = get_levels_for_categorical_vars(train)
+  train_quans = get_quantiles(train, winsor.vars)
   
   train = common_preprocessing(train)
   train = winsorise(train, train_quans)
@@ -113,37 +146,45 @@ make_predictions = function(train, test){
   train.matrix = as.matrix(select(train, -Sale_Price))
   train.output = as.vector(train$Sale_Price)
   
-  #training xgboost model
-  xgbmodel = xgboost(data = train.matrix, label = train.output, nrounds = 5000, max_depth=4, 
-                     eta=0.05, subsample=0.75, gamma=0, verbose = F)
-  
   #training linear model
-  lin_model = cv.glmnet(train.matrix, train.output, alpha = 1)
+  cv.out <- cv.glmnet(train.matrix, train.output, alpha = 1)
+  sel.vars <- predict(cv.out, type="nonzero", s = cv.out$lambda.1se)$X1
+  cv.out <- cv.glmnet(train.matrix[, sel.vars], train.output, alpha = 0)
   
   #preprocess test data
+  test = test[, !(colnames(test) %in% drop_vars)]
   test = common_preprocessing(test)
   test = winsorise(test, train_quans)
   test = create_dummies(test, train_lvls)
   
-  #Make predictions
-  preds1 = predict(xgbmodel, as.matrix(test))
-  preds2 = predict(lin_model, as.matrix(test), s=lin_model$lambda.min)
-  
-  end_time = Sys.time()
-  
-  return(list(xgb=preds1, lasso=as.vector(preds2), time=(end_time - start_time)))
+  as.vector(predict(cv.out, as.matrix(test[, sel.vars]), s=cv.out$lambda.min))
 }
 
+data <- read.csv("Ames_data.csv")
+testIDs <- read.table("project1_testIDs.dat")
+results = data.frame(xgb=rep(0,10), lasso=rep(0,10), time=rep(0,10))
+for(j in 1:10){
+  raw_train_data <- data[-testIDs[,j], ]
+  raw_test_data <- data[testIDs[,j], ]
+  test_y <- log(raw_test_data[, 83])
+  raw_test_data <- raw_test_data[, -83]
+  
+  start_time = Sys.time()
+  #pred_xgb = get_predictions_xgboost(raw_train_data, raw_test_data)
+  pred_xgb = rep(0, 879)
+  pred_lin = get_predictions_linear(raw_train_data, raw_test_data)
+  end_time = Sys.time()
+  
+  err1 = sqrt(sum((pred_xgb-test_y)^2)/length(test_y))
+  err2 = sqrt(sum((pred_lin-test_y)^2)/length(test_y))
+  
+  results[j, ] = c(err1, err2, (end_time - start_time))
+}
 
-raw_train_data = read.csv("train.csv")
-raw_test_data = read.csv("test.csv")
+#submission1 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp(preds$xgb))
+#submission2 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp((preds$lasso)))
 
-preds = make_predictions(raw_train_data, raw_test_data)
+#write.csv(submission1, file = "mysubmission1.txt", row.names = F)
+#write.csv(submission2, file = "mysubmission2.txt", row.names = F)
 
-submission1 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp(preds$xgb))
-submission2 = data.frame(PID=raw_test_data[, "PID"], Sale_Price=exp((preds$lasso)))
-
-write.csv(submission1, file = "mysubmission1.txt", row.names = F)
-write.csv(submission2, file = "mysubmission2.txt", row.names = F)
-
-print(preds$time)
+#print(preds$time)
