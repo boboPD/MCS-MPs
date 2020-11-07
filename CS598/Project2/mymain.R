@@ -1,6 +1,7 @@
 library(lubridate)
 library(tidyverse)
 library(forecast)
+library(splines)
 
 preprocess = function(data){
   new_train = data
@@ -14,7 +15,16 @@ get_preds_snaive = function(trainset, testset){
 }
 
 get_preds_spline = function(trainset, testset){
+  if(length(unique(trainset$wk)) < 4){
+    result = testset %>% mutate(Weekly_Pred=mean(trainset$Weekly_Sales))
+  }
+  else{
+    model = smooth.spline(trainset$wk, trainset$Weekly_Sales, df=20)
+    preds = predict(model, testset$wk)
+    result = testset %>% mutate(Weekly_Pred=preds$y)
+  }
   
+  return(result)
 }
 
 mypredict = function(){
@@ -45,14 +55,16 @@ mypredict = function(){
     
     for(store in test_stores){
       subset = train_dept_data %>% filter(Store == store)
-      test_subset = test_dept_data %>% filter(Store == store) %>% arrange(Date)
-      test_subset = preprocess(test_subset)
-      temp= get_preds_snaive(subset, test_subset)
-      if(is.null(test_pred)){
-        test_pred = temp
-      }
-      else{
-        test_pred = test_pred %>% add_row(temp)
+      if(nrow(subset) > 0){
+        test_subset = test_dept_data %>% filter(Store == store) %>% arrange(Date)
+        test_subset = preprocess(test_subset)
+        temp= get_preds_spline(subset, test_subset)
+        if(is.null(test_pred)){
+          test_pred = temp
+        }
+        else{
+          test_pred = test_pred %>% add_row(temp)
+        }
       }
     }
   }
