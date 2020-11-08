@@ -106,7 +106,7 @@ mypredict = function(){
     for(store in stores){
       store.train <- filter(tr.d, Store==store)
       if(nrow(store.train) > sum(is.na(store.train$Weekly_Sales))){
-        store.train[is.na(store.train$Weekly_Sales), "Weekly_Sales"] <- mean(store.train$Weekly_Sales, na.rm = T)
+        store.train[is.na(store.train$Weekly_Sales), "Weekly_Sales"] <- 0
         store.test <- filter(fc.d, Store==store)
         store.test["Dept"] <- d
         res = get_preds_tslm(store.train, store.test)
@@ -128,7 +128,6 @@ mypredict = function(){
     else{
       test_pred = test_pred %>% add_row(temp)
     }
-    
   }
   
   return(test_pred)
