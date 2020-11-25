@@ -1,0 +1,74 @@
+---
+title: "Vocabulary Construction"
+author: "Pradyumna Das (pd10)"
+date: "26/11/2020"
+output: html_document
+---
+```{r load-packages, include=FALSE}
+library(dplyr)
+library(magrittr)
+library(knitr)
+library(tidytext)
+```
+## Vocabulary Construction
+
+_The tidytext and dplyr packages were used in this exercise_
+
+For vocabulary construction I just used the top words that had the most discrimination power towards positive/negative sentiment. I used the entire data to find the best 1000 such words. 500 words from the positive reviews and 500 from the negative ones. Below are the steps I followed (the code is for 3-grams but I also created vocabularies with unigrams and bigrams for experimentation):
+
+First I read in the complete data, clean up the HTML and tokenise the reviews
+```{r}
+comp_data = read.table("alldata.tsv", header = T, stringsAsFactors = F)
+comp_data$review = gsub('<.*?>', ' ', comp_data$review)
+wf = comp_data %>% select(sentiment, review) %>% unnest_ngrams(word, review, n=3, n_min=1,ngram_delim="_")
+```
+
+Then I counted how many times each term appeared in positive and negative reviews. Since some of the tokens have very few occurrences we remove them
+```{r}
+cpos = wf %>% filter(sentiment==1) %>% count(word) %>% filter(n>100)
+cneg = wf %>% filter(sentiment==0) %>% count(word) %>% filter(n>100)
+```
+
+Then to compare the counts of the words I joined the two sets and took the difference between the positive count and the negative count for each term. This difference is going to tell us which term exists primarily in the positive review and which ones in the negative reviews.
+```{r}
+combined = full_join(cpos, cneg, by="word", suffix=c("_pos", "_neg"))
+combined[is.na(combined[,"n_pos"]), "n_pos"] = 0
+combined[is.na(combined[,"n_neg"]), "n_neg"] = 0
+combined["diff"] = combined$n_pos - combined$n_neg
+```
+
+Now all we need to do is remove the stop words and sort the set by the difference column and pick the words that have the most positive diff and the ones that have the most negative diff
+```{r echo=FALSE}
+combined = combined %>% anti_join(tidytext::stop_words) %>% arrange(desc(diff))
+```
+
+Positive terms:
+```{r}
+head(combined, 20)
+```
+  
+Negative terms:
+```{r}
+tail(combined, 20)
+```
+  
+The vocabulary file was created simply by appending the top and bottom 500 words of this matrix.
+```{r}
+v=rbind(head(combined,500), tail(combined, 500))
+readr::write_lines(v$word, "myvocab_tri.txt")
+```
+
+  
+#### Following are the top ten positive/negative words for uni-grams, bi-grams and tri-grams:
+  
+Positive words:
+
+```{r echo=F}
+pos
+```
+
+Negative words
+```{r echo=F}
+neg
+```
+As we can see there is not much difference between the bigram and trigram outputs. Most of the important terms are the same. trigrams contains a few extra terms like: is_a_great, of_the_best.
