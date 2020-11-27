@@ -1,6 +1,6 @@
 library(pROC)
 
-aucs=list()
+aucs=c()
 for(i in 1:5){
   folder = paste("./split", i, sep="_")
   file.copy("mymain.R", paste(folder, "mymain.R", sep="/"), overwrite = T)
@@ -11,6 +11,6 @@ for(i in 1:5){
   pred <- read.table("mysubmission.txt", header = TRUE)
   pred <- merge(pred, test.y, by="id")
   roc_obj <- roc(pred$sentiment, pred$prob)
-  aucs[paste("split", i, sep="_")] = pROC::auc(roc_obj)
+  aucs = append(aucs, pROC::auc(roc_obj))
   setwd("D:/repos/MCS-MPs/CS598/Project3")
 }

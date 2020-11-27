@@ -14,13 +14,23 @@ library(tidytext)
 
 _The tidytext and dplyr packages were used in this exercise_
 
-For vocabulary construction I just used the top words that had the most discrimination power towards positive/negative sentiment. I used the entire data to find the best 1000 such words. 500 words from the positive reviews and 500 from the negative ones. Below are the steps I followed (the code is for 3-grams but I also created vocabularies with unigrams and bigrams for experimentation):
+For vocabulary construction I just used the top words that had the most discrimination power towards positive/negative sentiment. I used the entire data to find the best 1000 such words. 500 words from the positive reviews and 500 from the negative ones. Below are the steps I followed:
 
-First I read in the complete data, clean up the HTML and tokenise the reviews
+First I read in the complete data, clean up the HTML and tokenise the reviews. I am considering unigrams and bigrams here. I had also tried with trigrams but there was barely any improvement in the models due to their addition and so I decided to use unigrams & bigrams only.
+
+_I am using the same stopword list mentioned in the piazza post (with a few additions) since most out of box stopwords contain words that are important for sentiment analysis like don't, good, etc._
 ```{r}
+mystopwords = c("i", "me", "my", "myself", 
+               "we", "our", "ours", "ourselves", 
+               "you", "your", "yours", 
+               "their", "they", "his", "her", 
+               "she", "he", "a", "an", "and",
+               "is", "was", "are", "were", 
+               "him", "himself", "has", "have", 
+               "it", "its", "the", "us", "of", "in", "as", "by")
 comp_data = read.table("alldata.tsv", header = T, stringsAsFactors = F)
 comp_data$review = gsub('<.*?>', ' ', comp_data$review)
-wf = comp_data %>% select(sentiment, review) %>% unnest_ngrams(word, review, n=3, n_min=1,ngram_delim="_")
+wf = comp_data %>% select(sentiment, review) %>% unnest_ngrams(word, review, n=2, n_min=1,ngram_delim="_", stopwords=mystopwords)
 ```
 
 Then I counted how many times each term appeared in positive and negative reviews. Since some of the tokens have very few occurrences we remove them
@@ -35,40 +45,34 @@ combined = full_join(cpos, cneg, by="word", suffix=c("_pos", "_neg"))
 combined[is.na(combined[,"n_pos"]), "n_pos"] = 0
 combined[is.na(combined[,"n_neg"]), "n_neg"] = 0
 combined["diff"] = combined$n_pos - combined$n_neg
+head(combined, 15)
 ```
 
-Now all we need to do is remove the stop words and sort the set by the difference column and pick the words that have the most positive diff and the ones that have the most negative diff
-```{r echo=FALSE}
-combined = combined %>% anti_join(tidytext::stop_words) %>% arrange(desc(diff))
+Now all we need to do is sort the set by the difference column and pick the words that have the most positive diff and the ones that have the most negative diff.
+```{r}
+combined = arrange(combined, desc(diff))
+```
+
+The vocabulary file was created simply by appending the top and bottom 500 words of this matrix.
+```{r eval=FALSE}
+v=rbind(head(combined,500), tail(combined, 500))
+readr::write_lines(v$word, "myvocab.txt")
+```
+
+Below are some terms from the positive and negative set:
+```{r include=F}
+pos = combined[1:500, "word"]
+neg = tail(combined, 500)[, "word"]
+positive_words = data.frame(unigrams=pos[!grepl("_", pos)][1:10], bigrams=pos[grepl("_", pos)][1:10])
+negative_words = data.frame(unigrams=neg[!grepl("_", neg)][1:10], bigrams=neg[grepl("_", neg)][1:10])
 ```
 
 Positive terms:
-```{r}
-head(combined, 20)
+```{r echo=F}
+positive_words
 ```
   
 Negative terms:
-```{r}
-tail(combined, 20)
-```
-  
-The vocabulary file was created simply by appending the top and bottom 500 words of this matrix.
-```{r}
-v=rbind(head(combined,500), tail(combined, 500))
-readr::write_lines(v$word, "myvocab_tri.txt")
-```
-
-  
-#### Following are the top ten positive/negative words for uni-grams, bi-grams and tri-grams:
-  
-Positive words:
-
 ```{r echo=F}
-pos
+negative_words
 ```
-
-Negative words
-```{r echo=F}
-neg
-```
-As we can see there is not much difference between the bigram and trigram outputs. Most of the important terms are the same. trigrams contains a few extra terms like: is_a_great, of_the_best.
