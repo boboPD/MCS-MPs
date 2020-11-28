@@ -33,13 +33,15 @@ comp_data$review = gsub('<.*?>', ' ', comp_data$review)
 wf = comp_data %>% select(sentiment, review) %>% unnest_ngrams(word, review, n=2, n_min=1,ngram_delim="_", stopwords=mystopwords)
 ```
 
-Then I counted how many times each term appeared in positive and negative reviews. Since some of the tokens have very few occurrences we remove them
+Then I counted how many times each term appeared in positive and negative reviews. Since some of the tokens have very few occurrences we remove them.
 ```{r}
 cpos = wf %>% filter(sentiment==1) %>% count(word) %>% filter(n>100)
 cneg = wf %>% filter(sentiment==0) %>% count(word) %>% filter(n>100)
 ```
 
 Then to compare the counts of the words I joined the two sets and took the difference between the positive count and the negative count for each term. This difference is going to tell us which term exists primarily in the positive review and which ones in the negative reviews.
+
+I had also tried to use the probability instead of raw counts. However that gave too much weightage to certain esoteric words that occurred only in one of the classes. The terms were positive in sentiment but it was unlikely that other users would use those words in reviews and that lead to a low test score. It made more sense to use words that were both positive and also common enough that I would find them in movie reviews.
 ```{r}
 combined = full_join(cpos, cneg, by="word", suffix=c("_pos", "_neg"))
 combined[is.na(combined[,"n_pos"]), "n_pos"] = 0
@@ -59,7 +61,7 @@ v=rbind(head(combined,500), tail(combined, 500))
 readr::write_lines(v$word, "myvocab.txt")
 ```
 
-Below are some terms from the positive and negative set:
+Below are some sample terms from the positive and negative set:
 ```{r include=F}
 pos = combined[1:500, "word"]
 neg = tail(combined, 500)[, "word"]
