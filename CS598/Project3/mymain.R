@@ -45,7 +45,6 @@ test <- read.table("test.tsv", stringsAsFactors = FALSE, header = TRUE)
 
 dtm_test = create_dtm_matrix(test, myvocab)
 
-test.y= read.table("test_y.tsv", header = T, stringsAsFactors = F)
 preds = predict(model, dtm_test, type="response")
 output = data.frame(id=test$id, prob=preds[, "s0"])
 write.table(output, file = "mysubmission.txt", row.names = FALSE, sep='\t')
