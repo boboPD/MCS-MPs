@@ -68,49 +68,34 @@ shinyServer(function(input, output, session) {
         }) # renderUI function
     })
     
-    # Calculate recommendations when the sbumbutton is clicked
-    df <- eventReactive(input$btn, {
-        withBusyIndicatorServer("btn", { # showing the busy indicator
-            # hide the rating container
-            useShinyjs()
-            jsCode <- "document.querySelector('[data-widget=collapse]').click();"
-            runjs(jsCode)
-            
-            
-            
-            user_results = (1:10)/10
-            user_predicted_ids = 1:10
-            recom_results <- data.table(Rank = 1:10, 
-                                        MovieID = movies$MovieID[user_predicted_ids], 
-                                        Title = movies$Title[user_predicted_ids], 
-                                        Predicted_rating =  user_results)
-            
-        }) # still busy
-        
-    }) # clicked on button
-    
     
     # display the recommendations
-    output$results2 <- renderUI({
-        num_rows <- 2
-        num_movies <- 5
-        recom_result <- df()
+    sys2recom = observeEvent(input$btn2, {
+        recom_result = system2(user_ratings)
         
-        lapply(1:num_rows, function(i) {
-            list(fluidRow(lapply(1:num_movies, function(j) {
-                box(width = 2, status = "success", solidHeader = TRUE, title = paste0("Rank ", (i - 1) * num_movies + j),
-                    
-                    div(style = "text-align:center", 
-                        a(img(src = movies$image_url[recom_result$MovieID[(i - 1) * num_movies + j]], height = 150))
-                    ),
-                    div(style="text-align:center; font-size: 100%", 
-                        strong(movies$Title[recom_result$MovieID[(i - 1) * num_movies + j]])
-                    )
-                    
-                )        
-            }))) # columns
-        }) # rows
-        
-    }) # renderUI function
+        # display the recommendations
+        output$results2 <- renderUI({
+            num_rows <- 2
+            num_movies <- 5
+            
+            lapply(1:num_rows, function(i) {
+                list(fluidRow(lapply(1:num_movies, function(j) {
+                    idx = (i - 1) * num_movies + j
+                    curr_mov = movies[movies$MovieID==recom_result[idx], ]
+                    box(width = 2, status = "success", solidHeader = TRUE, title = paste0("Rank ", idx),
+                        
+                        div(style = "text-align:center", 
+                            a(img(src = curr_mov$image_url, height = 150))
+                        ),
+                        div(style="text-align:center; font-size: 100%", 
+                            strong(curr_mov$Title)
+                        )
+                        
+                    )        
+                }))) # columns
+            }) # rows
+            
+        }) # renderUI function
+    })
     
 }) # server function

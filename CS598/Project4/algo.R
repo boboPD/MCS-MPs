@@ -4,19 +4,6 @@ library(dplyr)
 ratings = read.csv("./data/ratings.dat", sep = ":", colClasses = c('integer', 'NULL'), header = F)
 colnames(ratings) = c('UserID', 'MovieID', 'Rating', 'Timestamp')
 
-train.id = sample(nrow(ratings), floor(nrow(ratings)) * 0.8)
-train = ratings[train.id, ]
-test = ratings[-train.id, ]
-
-i = paste0('u', train$UserID)
-j = paste0('m', train$MovieID)
-x = train$Rating
-tmp = data.frame(i, j, x, stringsAsFactors = T)
-Rmat = sparseMatrix(as.integer(tmp$i), as.integer(tmp$j), x = tmp$x)
-rownames(Rmat) = levels(tmp$i)
-colnames(Rmat) = levels(tmp$j)
-Rmat = new('realRatingMatrix', data = Rmat)
-
 movies = readLines('./data/movies.dat')
 movies = strsplit(movies, split = "::", fixed = TRUE, useBytes = TRUE)
 movies = matrix(unlist(movies), ncol = 3, byrow = TRUE)
@@ -41,4 +28,26 @@ system1 = function(user_rated, genre){
   top_movies["common_genre_cnt"] = unlist(lapply(lapply(genre_set1, intersect, y=genres_of_user_rated_movies), length))
   
   top_movies %>% mutate(score=(0.25*common_genre_cnt + rating)) %>% select(-Genres, -num_of_ratings) %>% arrange(desc(score)) %>% top_n(10)
+}
+
+system2 = function(user_rated){
+  i = paste0('u', ratings$UserID)
+  j = paste0('m', ratings$MovieID)
+  x = ratings$Rating
+  tmp = data.frame(i, j, x, stringsAsFactors = T)
+  Rmat = sparseMatrix(as.integer(tmp$i), as.integer(tmp$j), x = tmp$x)
+  rownames(Rmat) = levels(tmp$i)
+  colnames(Rmat) = levels(tmp$j)
+  Rmat = new('realRatingMatrix', data = Rmat)
+  
+  r = Recommender(Rmat, method="POPULAR")
+  
+  user_rated$newMovieID = paste0('m', user_rated$MovieID)
+  idxs = base::match(user_rated$newMovieID, levels(tmp$j))
+  user_rating_mat = sparseMatrix(rep(1, length(idxs)), idxs, x=user_rated$Rating, dims = c(1, 3706))
+  
+  testuser = new('realRatingMatrix', data = user_rating_mat)
+  p = as(predict(r, testuser, type="topN", n=10), "list")[[1]]
+  
+  as.integer(substr(p, 2, nchar(p)))
 }
