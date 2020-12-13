@@ -69,6 +69,7 @@ dashboardPage(
       dashboardSidebar(disable = TRUE),
 
       dashboardBody(includeCSS("./css/movies.css"),
+          h4("Please click on the submit button once you have finished rating."),
           userRatingUI(),
           system1UI(),
           system2UI()
