@@ -1,0 +1,67 @@
+---
+title: "Project 4 - Movie Recommender"
+author: "Pradyumna Das (pd10)"
+date: "13/12/2020"
+output: html_document
+---
+
+## Problem Statement
+
+In this project we are attempting to provide personalised movie recommendations for the user based. The Netflix competition dataset is being used to the train the model. Two systems have been built. System 1 is based on the users selection of a genre. System 2 is a more personalised system. It will make recommendations based solely on the users previous likes and dislikes. A more detailed description of each system follows.
+
+[The code for this site can be found here](https://github.com/boboPD/MCS-MPs/tree/master/CS598/Project4)
+
+### System 1
+
+This system is supposed to take the user's preferred genre as input and provide recommendations based on that genre. I thought of the following two schemes to make recommendations:
+
+1. Suggest the top 10 popular movies in the selected genre. Sort them in descending order of average rating.  
+1. Create a score for each movie based on a linear combination the average rating and the number of genres that the movie has in common with the movies that the user has liked(rating >= 4) in the past. So if the user has liked movies that are tagged "Animation", "Sci-fi", "Action" then a movie with the genres Sci-fi and Action would be ranked higher than a movie with Sci-fi and Drama, keeping the average rating equal. However, we have to be careful that the second factor does not overpower the rating and so I scale it down a little. The final formula that I used was the following: `score=0.25*(number of common genres) + average rating`. This score was what I eventually used to rank the recommendations. The scale down factor of 0.25 was empirically decided.
+
+### System 2
+
+This system is a personalised movie recommendation engine that is attempting to predict the rating that a user will give to movies they have not watched yet, based on the ratings they have provided for other movies. I have evaluated the following methods:
+
+1. __The POPULAR method in recommenderlab.__ This method first centers all the ratings in the training matrix and takes the average rating of each movie and then adds the test users average rating to it. Basically, it will recommend the most highly rated movies on the platform.  
+1. __Item based collaborative filtering.__ This considers the items similar to the ones a user has already rated highly. This requires a similarity metric between items and also the size of the neighborhood. I have considered a _neighborhood size of 30_ in my tests. For the similarity metric I tried both cosine similarity and Pearson correlation. A discussion of the results is below.  
+1. __User based collaborative filtering.__ This considers ratings of users similar to the test user to predict the ratings of the test user. Users who rate similar items similarly are considered similar. Here again I have used a neighborhood size of 30 and cosine and pearson similarity.
+
+### Discussion of performance
+
+I used the recommender evaluation APIs of recommenderlab to evaluate my models. Below is a comparison of the methods described above. The evaluation scheme was the following: 
+
+```
+evaluationScheme(data = Rmat, method="split", train=0.8, goodRating=4, given=5, k=10)
+```
+
+The data was split into 80% training and 20% test set. Ratings of 4 and above were considered positive and for the test data, 5 available ratings for each test user were presented to the model to predict the rest of the ratings. The test was run 10 times. __Also, the normalisation used for all the methods was a simple centering of each row. Similarity metric used was cosine similarity.__
+
+```{r echo=FALSE}
+plot(ev)
+```
+
+As we can see, the performance of the POPULAR model seems to be the best, followed by UBCF and IBCF. This remained true no matter how I changed the neighborhood or the similarity measure. I found this to be a bit surprising. However, a drawback of this model is that the recommendations are not very personalised as the only user factor that it depends on is the mean rating of the test user. The average rating of each movie is a constant given a training set and so the recommendations don't change much as the user rates more and more movies. This does not feel very personalised.
+
+For both UBCF and IBCF I could see that the recommended movies changed as I rated more movies and so it felt more personalised. However IBCF performs poorly when compared to UBCF based on RMSE. Also, the IBCF method takes a long time to train since it has to calculate the item similarity matrix, although this can be easily solved by evaluating it offline. 
+
+Next I wanted to compare cosine similarity with the Pearson similarity to see if there was any difference in the results. I did not expect there to be much difference since cosine similarity is just the dot product of the vectors which captures the projection of one vector on another and Pearson's coefficient also captures the linear correlation between variables. As expected there was barely any difference between the 2 methods. The metrics below are averages over 10 runs. The RMSE was nearly identical with the cosine number in the graph above. 
+
+```{r echo=FALSE}
+plot(ev_pearson)
+```
+
+Based on the above results I decided to try using a hybrid of POPULAR and UBCF. UBCF would bring in more personalised recommendations and POPULAR would contribute content that was probably not very personalised, creating a balance. I thought about this as way to stop the recommender from overfitting to a user and only recommending content from a very narrow set of interests. 
+
+Below is a comparison of the HYBRID vs UBCF models. The hybrid model consisted of a POPULAR model with weight 0.3 and a UBCF model with neighborhood of 30 (the rest of the parameters are default, similarity: cosine and normalization: centered) vs just a UBCF model with the same parameters. The evaluation scheme is the following: `evaluationScheme(data = Rmat, method="split", train=0.8, goodRating=4, given=5, k=3)`.
+
+```{r, echo=FALSE}
+plot(ev_hy)
+```
+
+As was expected, the hybrid model has slightly better RMSE than UBCF since the adding the POPULAR model would have reduced the RMSE by come amount. Next I need to figure out what weights to use for the two models. I used the same evaluation scheme to run 5 models, varying the contribution of the POPULAR model from 0.1 to 0.5. Below is a plot of the RMSE against weight of the popular model.
+
+```{r echo=FALSE}
+ggplot(f) + geom_line(mapping = aes(x=weights, y=rmse))
+```
+
+The graph is linear, corresponding to the linear increase in the weightage of the popular model. I was looking for an elbow in the graph that would correspond to a large decrease in RMSE and I could just pick that weight since that would both reduce RMSE most and also introduce variability in the model. In the absence of an elbow I could not decide what weights to use using the graph and let them remain at 0.3 and 0.7, which were the initial weights I tried.
