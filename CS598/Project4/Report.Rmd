@@ -7,9 +7,7 @@ output: html_document
 
 ## Problem Statement
 
-In this project we are attempting to provide personalised movie recommendations for the user based. The Netflix competition dataset is being used to the train the model. Two systems have been built. System 1 is based on the users selection of a genre. System 2 is a more personalised system. It will make recommendations based solely on the users previous likes and dislikes. A more detailed description of each system follows.
-
-[The code for this site can be found here](https://github.com/boboPD/MCS-MPs/tree/master/CS598/Project4)
+In this project we are attempting to provide personalised movie recommendations for the user. The Netflix competition dataset is being used to the train the model. Two systems have been built. System 1 is based on the users selection of a genre. System 2 is a more personalised system. It will make recommendations based solely on the users previous likes and dislikes. A more detailed description of each system follows.
 
 ### System 1
 
@@ -25,6 +23,8 @@ This system is a personalised movie recommendation engine that is attempting to 
 1. __The POPULAR method in recommenderlab.__ This method first centers all the ratings in the training matrix and takes the average rating of each movie and then adds the test users average rating to it. Basically, it will recommend the most highly rated movies on the platform.  
 1. __Item based collaborative filtering.__ This considers the items similar to the ones a user has already rated highly. This requires a similarity metric between items and also the size of the neighborhood. I have considered a _neighborhood size of 30_ in my tests. For the similarity metric I tried both cosine similarity and Pearson correlation. A discussion of the results is below.  
 1. __User based collaborative filtering.__ This considers ratings of users similar to the test user to predict the ratings of the test user. Users who rate similar items similarly are considered similar. Here again I have used a neighborhood size of 30 and cosine and pearson similarity.
+
+For prediction I used the type="topN" parameter of the predict function to fetch the top 10 movies for the user.
 
 ### Discussion of performance
 
@@ -52,16 +52,43 @@ plot(ev_pearson)
 
 Based on the above results I decided to try using a hybrid of POPULAR and UBCF. UBCF would bring in more personalised recommendations and POPULAR would contribute content that was probably not very personalised, creating a balance. I thought about this as way to stop the recommender from overfitting to a user and only recommending content from a very narrow set of interests. 
 
-Below is a comparison of the HYBRID vs UBCF models. The hybrid model consisted of a POPULAR model with weight 0.3 and a UBCF model with neighborhood of 30 (the rest of the parameters are default, similarity: cosine and normalization: centered) vs just a UBCF model with the same parameters. The evaluation scheme is the following: `evaluationScheme(data = Rmat, method="split", train=0.8, goodRating=4, given=5, k=3)`.
+Below is a comparison of the HYBRID vs UBCF models. The hybrid model consisted of a POPULAR model with weight 0.3 and a UBCF model with neighborhood of 30 (the rest of the parameters are default, similarity: cosine and normalization: centered) vs just a UBCF model with the same parameters. The evaluation scheme is the following: 
+
+```
+evaluationScheme(data = Rmat, method="split", train=0.8, goodRating=4, given=5, k=3).
+```
+
 
 ```{r, echo=FALSE}
 plot(ev_hy)
 ```
 
-As was expected, the hybrid model has slightly better RMSE than UBCF since the adding the POPULAR model would have reduced the RMSE by come amount. Next I need to figure out what weights to use for the two models. I used the same evaluation scheme to run 5 models, varying the contribution of the POPULAR model from 0.1 to 0.5. Below is a plot of the RMSE against weight of the popular model.
+As was expected, the hybrid model has slightly better RMSE than UBCF since the adding the POPULAR model would have reduced the RMSE by some amount. Next I need to figure out what weights to use for the two models. I used the same evaluation scheme to run 5 models, varying the contribution of the POPULAR model from 0.1 to 0.5. Below is a plot of the RMSE against weight of the popular model.
 
 ```{r echo=FALSE}
 ggplot(f) + geom_line(mapping = aes(x=weights, y=rmse))
 ```
 
 The graph is linear, corresponding to the linear increase in the weightage of the popular model. I was looking for an elbow in the graph that would correspond to a large decrease in RMSE and I could just pick that weight since that would both reduce RMSE most and also introduce variability in the model. In the absence of an elbow I could not decide what weights to use using the graph and let them remain at 0.3 and 0.7, which were the initial weights I tried.
+
+## Code
+
+[The code for this site can be found here](https://github.com/boboPD/MCS-MPs/tree/master/CS598/Project4).
+
+There are 3 main files:
+
+1. __ui.R__: This contains the UI code for shiny.
+1. __server.R__: This contains the server code for shiny.
+1. __algo.R__: This is the file that contains the code for the algorithms of both system 1 and system 2. There are two functions in this file called `system1(user_rated, genre)` and system2(user_rated), corresponding to the 2 systems.
+
+The code depends on the following libraries:
+
+library(shiny)
+library(shinydashboard)
+library(recommenderlab)
+library(ShinyRatingInput)
+library(shinyjs)
+library(recommenderlab)
+library(dplyr)
+
+All the required data needed to run the app is checked in to the repository. YOu should be able to just clone the repo and use `runApp()` in that directory to start the app locally.

@@ -3,9 +3,7 @@ library(shiny)
 library(shinydashboard)
 library(recommenderlab)
 library(ShinyRatingInput)
-library(data.table)
 library(shinyjs)
-library(readr)
 
 source('helpers.R')
 
