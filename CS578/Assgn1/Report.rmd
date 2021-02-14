@@ -1,0 +1,188 @@
+---
+title: "Assignment 1"
+author: "Pradyumna Das (pd10)"
+date: "14/02/2021"
+output: pdf_document
+---
+
+### Question 1
+
+Each review has a probability $p_i$ of being positively rated and the reviews are independent of each other and so we can use the Binomial distribution to model the likelihood. The prior is given to be uniformly distributed $U(0, 1)$. Let $s$ be the number of movies that were positively rated in the given data. Thus, 
+
+$$Likelihood:  P(y|p_i) = \binom{n}{s} p_i^s (1-p_i)^{(n-s)}$$
+$$Prior: P(p_i) \sim{U(0, 1)}$$
+
+\begin{align}
+Posterior: P(p_i \mid y) &\propto P(y \mid p_i) \times P(p_i) \\
+&\propto {\binom{n}{s}} p_i^s(1-p_i)^{(n-s)} \times {\frac{1}{(1-0)}} \\
+&\propto p_i^s(1-p_i)^{(n-s)}
+\end{align}
+
+The posterior distribution $\sim{\beta(\alpha, \beta)}$ where $\alpha = s+1, \beta = n-s+1$. Substituting the values from the 2 samples
+
+
+a) $$p_1 \sim{\beta(10, 2)}$$
+   $$p_2 \sim{\beta(426, 76)}$$
+   
+b) Summaries of the posterior distributions:
+
+Mean of a $\beta$ distribution is given by $\frac{\alpha}{\alpha + \beta}$ and mode is give by $\frac{\alpha - 1}{\alpha + \beta - 2}$. Substituting the values from the previous step:
+
+Movie 1: $$ \mu_1 = \frac{10}{12} \approx 0.83,  Mode_1 = \frac{9}{10} = 0.9 $$
+Movie 2: $$ \mu_2 = \frac{426}{502} \approx 0.85,  Mode_2 = \frac{425}{500} = 0.85 $$
+
+Using qbeta to estimate the median for both the movies:
+
+```{r}
+Median1 = qbeta(0.5, 10, 2)
+Median2 = qbeta(0.5, 426, 76)
+Median1
+Median2
+```
+As we can see, the posterior medians of both the movies is approximately 0.85.
+
+__Best movie according to posterior mean: Movie 2__
+
+__Best movie according to posterior mode: Movie 1__
+
+__Best movie according to posterior median: Movie 1 (if we consider precision upto the 3rd decimal place.)__
+
+Since the mean, median and mode were all 0.85 for the posterior distribution for movie 2, I was wondering if it is normally distributed and indeed it was:
+
+```{r}
+hist(rbeta(10000, 426, 76), main = "Posterior for movie 2")
+```
+
+The distribution for movie 1 is slightly right skewed, resulting in the higher mode.
+
+```{r}
+hist(rbeta(10000, 10, 2), main = "Posterior for movie 1")
+```
+
+
+### Question 2
+
+a)
+  i. Histogram of article length
+```{r}
+data = read.csv("randomwikipedia.txt")
+hist(data$bytes, freq = T, xlab = "Length of article")
+```
+
+  The distribution is heavily left skewed.
+
+  ii. Transforming the length to log scale:
+```{r}
+data["log_length"] = log(data$bytes)
+hist(data$log_length, freq = T, xlab = "Length of article in log scale")
+```
+  
+  The distribution on the log scale is significantly more symmetric.
+  
+  iii. The log scale is better to use in the next questions because they assume that the distribution is Normal and the log scale resembles a normal distribution much more closely than the original scale.
+  
+b) 
+```{r}
+Mean = mean(data$log_length)
+variance = var(data$log_length)
+Mean
+variance
+```
+
+c) Assuming that $y_i$ are normally distributed with mean $\mu$ and known variance $\sigma^2$. For generality, I am denoting the number of samples as $n$
+
+\begin{align}
+P(y \mid \mu) &\propto \prod_n{\exp(-\frac{1}{2\sigma^2}(y_i-\mu)^2)} \\
+&\propto \exp(-\frac{1}{2\sigma^2}\sum_n(y_i-\mu)^2) \\
+&\propto \exp(-\frac{1}{2\sigma^2}[\sum_n{y_i^2} - \sum_n{2\mu y_i} + n\mu]) \\
+&\propto \exp(-\frac{n}{2\sigma^2}[\sum_n{\frac{y_i^2}{n}} - 2\mu\frac{\sum_n{y_i}}{n} + \mu]) && \text{Multiplying and divinding by n} \\
+&\propto \exp(-\frac{n}{2\sigma^2}[\sum_n{\frac{y_i^2}{n}} - 2\mu \bar{y} + \mu]) \\
+&\propto \exp(-\frac{n}{2\sigma^2}[\sum_n{\frac{y_i^2}{n}} -\bar{y}^2 + \bar{y}^2 - 2\mu \bar{y} + \mu])  && \text{Adding and subtracting the sample mean} \\
+&\propto \exp(-\frac{n}{2\sigma^2}[(\bar{y} - \mu)^2 + \sum_n{\frac{y_i^2}{n}} - \bar{y}^2]) \\
+&\propto \exp(-\frac{n}{2\sigma^2}(\bar{y} - \mu)^2) \times \exp(\sum_n{\frac{y_i^2}{n}} - \bar{y}^2) \\
+&\propto \exp(-\frac{n}{2\sigma^2}(\bar{y} - \mu)^2)
+\end{align}
+
+Since we are using a flat prior i.e. a constant, the posterior distribution is proportional to the likelihood:
+
+$$
+P(\mu \mid y) \propto \exp(-\frac{n}{2\sigma^2}[(\mu - \bar{y})^2)
+$$
+
+Thus, the posterior distribution is normally distributed with variance $\frac{\sigma^2}{n}$ and mean $\bar{y}$. Plugging in the values that we have from our data we get:
+1. Posterior mean of $\mu$: 8.381909
+1. Posterior variance of $\mu$: 0.03770189
+1. Posterior precision of $\mu$: 26.52387
+
+__Plot of the prior and posterior distributions of the mean__
+
+```{r}
+post_samples = rnorm(10000, mean = Mean, sd = sqrt(variance/20))
+ggplot() + geom_density(mapping = aes(post_samples), colour="red") + geom_hline(yintercept = 1, colour="green") 
+```
+The red plot is the posterior distribution and green line is the flat prior set to an arbitrary constant, 1 in this case.
+
+__95% central posterior interval__
+```{r}
+qnorm(c(0.025, 1-0.025), Mean, sqrt(variance/20))
+```
+The 95% posterior central interval lies between [8.001343, 8.762474]
+
+d) Joint posterior distribution
+
+$$
+\begin{align}
+P(\mu, \sigma^2 \mid y) &= P(y \mid \mu, \sigma)P(\mu, \sigma) \\
+&=\prod_n{\frac{1}{\sqrt{2\pi}\sigma}\exp(-\frac{1}{2\sigma^2}(y_i-\mu)^2)} \times \sigma^{-2} \\
+&=\frac{1}{(2\pi)^{\frac{n}{2}}\sigma^n}\exp(-\frac{1}{2\sigma^2}\sum_n(y_i - \mu)^2) \times \sigma^{-2} \\
+&\propto \sigma^{-n-2}\exp(-\frac{1}{2\sigma^2}\sum_n(y_i - \mu)^2) \\
+&=\sigma^{-n-2}\exp(-\frac{1}{2\sigma^2}[(n-1)s^2 + n(\bar{y} - \mu)^2]) && \text{according to eq 3.2 in the text}
+\end{align}
+$$
+
+In order to find the marginal posterior density of $\mu$ we need to integrate the above w.r.t $\sigma^2$
+
+$$
+\begin{align}
+P(\mu \mid y) &= \int_0^\infty P(\mu, \sigma^2 \mid y)d\sigma^2 \\
+&=\int_0^\infty\sigma^{-n-2}\exp(-\frac{1}{2\sigma^2}[(n-1)s^2 + n(\bar{y} - \mu)^2])d\sigma^2
+\end{align}
+$$
+
+The above integral evaluates to the T distribution with mean $\bar{y}$ and variance $\frac{\bar{s}^2}{n} \times \frac{\nu}{\nu-2}$ and $\nu$ = n-1 degrees of freedom.
+1. Posterior mean of $\mu$: 8.381909
+1. Posterior variance of $\mu$: 0.04213741
+1. Posterior precision of $\mu$: 23.73188
+
+__95% central posterior interval of the mean__
+```{r}
+post_sig = 19 * variance / rchisq(1000, 19)
+post_mu = rnorm(1000, Mean, sqrt(post_sig/20))
+quantile(post_mu,c(0.025, 1-0.025))
+```
+__95% central posterior interval of the variance__
+```{r}
+quantile(post_sig,c(0.025, 1-0.025))
+```
+e)
+```{r}
+draws=rnorm(1000000, post_mu, sqrt(post_sig))
+```
+
+i. __95% posterior predictive interval (original scale)__
+```{r}
+exp(quantile(draws, c(0.025, 1-0.025)))
+```
+ii. __Probability that a new article will be shorter than the shortest article in the data__
+
+```{r}
+small_article_length = min(data$log_length)
+mean(draws < small_article_length) #Mean will give the fraction of articles smaller than the smallest in the data
+```
+So that is about 2.25% chance that a new article will be shorter than the shortest article in the data
+
+iii. Since we know that the probability of a random article being shorter is approximately 2.2% and that the length of each article is independent of others we can model this as a Bernoulli distribution. Thus we now have to find the probability that 0 articles are shorter and then 1 - of that will give us the probability that at least one article is shorter. Let A be the event that no articles are shorter than the shortest article in the data. Then the probability we need:
+
+$$1-P(A) = 1 - \binom{20}{0}0.022^0(1-0.022)^{20} = 1-0.978^{20} \approx 0.36 $$
+
+Thus, there is about 36% chance that at least one of the articles will be shorter than the shortest article in the data.
