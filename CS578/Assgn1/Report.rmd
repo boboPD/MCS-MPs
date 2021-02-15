@@ -78,7 +78,7 @@ hist(data$bytes, freq = T, xlab = "Length of article")
   ii. Transforming the length to log scale:
 ```{r}
 data["log_length"] = log(data$bytes)
-hist(data$log_length, freq = T, xlab = "Length of article in log scale")
+hist(data$log_length, freq = T, xlab = "Length of article in log scale", main="Histogram in log scale")
 ```
   
   The distribution on the log scale is significantly more symmetric.
