@@ -1,0 +1,50 @@
+---
+title: "Assignment 2"
+author: "Pradyumna Das (pd10)"
+date: "21/02/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Question 1
+
+a. Plot of $\log{\alpha}$ vs $\log{\beta}$
+
+```{r}
+alpha = rexp(1000, 0.001)
+beta = rexp(1000, 0.001)
+
+plot(log(beta), log(alpha))
+```
+
+Simulated values of $\theta_1$
+
+```{r}
+theta1 = rbeta(1000, alpha, beta)
+hist(theta1, freq = F)
+```
+
+The histogram is fairly uniform (less informative) as expected since the value of $\lambda$ is close to zero.
+
+b. Alternate setup of the prior
+
+```{r}
+phi_1 = runif(1000, 0, 1)
+phi_2 = runif(1000, 0, 1000)
+
+alpha_1 = phi_1/phi_2^2
+beta_1 = (1-phi_1)/phi_2^2
+
+plot(log(beta_1), log(alpha_1), xlab = "log(beta)", ylab = "log(alpha)")
+```
+
+
+```{r}
+theta1_alt = rbeta(1000, alpha, beta)
+hist(theta1_alt, freq = F)
+```
+
+### Question 2
