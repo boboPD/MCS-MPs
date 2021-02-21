@@ -2,11 +2,17 @@
 title: "Assignment 2"
 author: "Pradyumna Das (pd10)"
 date: "21/02/2021"
-output: word_document
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(rjags)
+library(ggplot2)
 ```
 
 ### Question 1
@@ -48,3 +54,59 @@ hist(theta1_alt, freq = F)
 ```
 
 ### Question 2
+
+a. The flat priors that are being approximated are the following:
+
+\begin{align}
+\psi_0 &\sim flat\ prior\ over\ (-\infty, \infty) \\
+\sigma_0 &\sim flat\ prior\ over\ (0, \infty)
+\end{align}
+
+b. DAG diagram here
+
+c. JAGS code for the model:
+```
+model {
+  for (j in 1:length(psi)) {
+    psihat[j] ~ dnorm(psi[j], 1/sigma[j]^2)
+    psi[j] ~ dnorm(psi0, 1/sigmasq0)
+  }
+
+  psi0 ~ dnorm(0, 1/1000000)
+  sigma0 ~ dunif(0, 1000)
+  
+  sigmasq0 <- sigma0^2
+}
+```
+
+d. I rearranged the numbers in the file into 2 columns and read them into a data frame.
+```{r}
+d=read.table("thenumbers.txt", header = T)
+head(d)
+m1 = jags.model("asgn2template.bug", d)
+```
+
+e. Adding 10,000 iterations of burn in and sampling 100,000 values of $\psi_0$ and $\sigma_0^2$
+```{r}
+update(m1, 10000)
+samples1 = coda.samples(m1, c("psi0", "sigmasq0"), n.iter = 100000)
+```
+
+Description of the posterior samples for $\psi_0$ and $\sigma_0^2$
+```{r}
+summary(samples1)
+```
+Based on the summary above I have tabled the summary statistics of the 2 distrbutions and plotted their densities below
+
+variable | Mean | SD | 95% CI
+:---: | :---: | :---: | :---:
+psi0 | 0.2866 | 0.1576 | (-0.02627, 0.5998)
+sigmasq0 | 0.2975 | 0.1678 | (0.11675, 0.7232)
+```{r}
+samples_df = as.data.frame(as.matrix(samples1))
+
+# psi0 plot
+ggplot(samples_df) + geom_density(aes(psi0)) + geom_vline(xintercept = c(-0.02627, 0.5998), colour="red") + labs(title = "psi0 density plot with 95% confidence interval")
+ggplot(samples_df) + geom_density(aes(sigmasq0)) + geom_vline(xintercept = c(0.11675, 0.7232), colour="red") + labs(title = "sigmasq0 density plot with 95% confidence interval")
+```
+The density for $\psi_0$ looks normally distributed whereas $\sigma_0^2$ resembles an inverse chi squared distribution.
