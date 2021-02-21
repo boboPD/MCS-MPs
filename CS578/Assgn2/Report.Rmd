@@ -3,9 +3,9 @@ title: "Assignment 2"
 author: "Pradyumna Das (pd10)"
 date: "21/02/2021"
 output:
+  word_document: default
   html_document:
     df_print: paged
-  word_document: default
   pdf_document: default
 ---
 
@@ -57,10 +57,12 @@ hist(theta1_alt, freq = F)
 
 a. The flat priors that are being approximated are the following:
 
+$$
 \begin{align}
 \psi_0 &\sim flat\ prior\ over\ (-\infty, \infty) \\
 \sigma_0 &\sim flat\ prior\ over\ (0, \infty)
 \end{align}
+$$
 
 b. DAG diagram here
 
@@ -110,3 +112,48 @@ ggplot(samples_df) + geom_density(aes(psi0)) + geom_vline(xintercept = c(-0.0262
 ggplot(samples_df) + geom_density(aes(sigmasq0)) + geom_vline(xintercept = c(0.11675, 0.7232), colour="red") + labs(title = "sigmasq0 density plot with 95% confidence interval")
 ```
 The density for $\psi_0$ looks normally distributed whereas $\sigma_0^2$ resembles an inverse chi squared distribution.
+
+f.
+
+  i. JAG image here
+  ii. JAGS model code
+  
+  ```
+  model {
+  for (j in 1:length(psi)) {
+    psihat[j] ~ dnorm(psi[j], 1/sigma[j]^2)
+    psi[j] ~ dnorm(psi0, 1/sigmasq0)
+  }
+
+  psi0 ~ dnorm(0, 1/1000000)
+  sigma0 ~ dunif(0, 1000)
+  
+  psi_tilde ~ dnorm(psi0, 1/sigmasq0)
+  psi_pred ~ dnorm(psi_tilde, 1/sigma_tilde^2)
+  
+  sigmasq0 <- sigma0^2
+  
+  odds_ind = psi_pred > 2*sigma_tilde
+}
+  ```
+  Running the model:
+```{r}
+m2=jags.model("asgn2pred.bug", c(as.list(d), sigma_tilde=0.2))
+update(m2, 10000)
+samples_pred = coda.samples(m2, c("psi_pred", "odds_ind"), n.iter = 100000)
+```
+  
+  iii.  Summary of the samples from the posterior predictive distribution:
+```{r}
+summary(samples_pred)
+```
+
+  __Mean of the posterior predictive samples: 0.2869__
+  __Standard deviation: 0.6033__
+  __95% confidence interval: (-0.9077, 1.481)__
+  
+```{r}
+ggplot(as.data.frame(as.matrix(samples_pred))) + geom_density(aes(psi_pred)) + geom_vline(xintercept = c(-0.9077, 1.481), colour="red") + labs(title = "Plot of the posterior distribution:")
+```
+  
+  iv. The mean of the odds_ind would give the probability that the new predicted log odds ratio will exceed zero by at least twice the standard error. From the summary table above we can see that the mean is 0.4218. __Thus there is approx. a 42% chance that the new study will produce a statistically significant result.__
