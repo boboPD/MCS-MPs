@@ -17,7 +17,7 @@ library(ggplot2)
 
 ### Question 1
 
-a. Plot of $\log{\alpha}$ vs $\log{\beta}$
+a. Plot of $\log{\alpha}$ vs $\log{\beta}$  
 
 ```{r}
 alpha = rexp(1000, 0.001)
@@ -26,7 +26,7 @@ beta = rexp(1000, 0.001)
 plot(log(beta), log(alpha))
 ```
 
-Simulated values of $\theta_1$
+Simulated values of $\theta_1$  
 
 ```{r}
 theta1 = rbeta(1000, alpha, beta)
@@ -35,7 +35,7 @@ hist(theta1, freq = F)
 
 The histogram is fairly uniform (less informative) as expected since the value of $\lambda$ is close to zero.
 
-b. Alternate setup of the prior
+b. Alternate setup of the prior  
 
 ```{r}
 phi_1 = runif(1000, 0, 1)
@@ -111,6 +111,7 @@ samples_df = as.data.frame(as.matrix(samples1))
 ggplot(samples_df) + geom_density(aes(psi0)) + geom_vline(xintercept = c(-0.02627, 0.5998), colour="red") + labs(title = "psi0 density plot with 95% confidence interval")
 ggplot(samples_df) + geom_density(aes(sigmasq0)) + geom_vline(xintercept = c(0.11675, 0.7232), colour="red") + labs(title = "sigmasq0 density plot with 95% confidence interval")
 ```
+
 The density for $\psi_0$ looks normally distributed whereas $\sigma_0^2$ resembles an inverse chi squared distribution.
 
 f.
