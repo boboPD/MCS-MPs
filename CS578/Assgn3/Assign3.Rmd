@@ -1,0 +1,183 @@
+---
+title: "Assignment 3"
+author: "Pradyumna Das (pd10)"
+date: "20/03/2021"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rjags)
+```
+
+### Question 1  
+
+##### Part a
+
+```{r}
+#running the Gibbs Sampler on Flint data
+source("FlintGibbs.R")
+
+#Autocorrelation plots
+acf(mu.sim)
+acf(sigma.2.sim)
+```
+
+##### Part b
+
+i)
+In order to find the best value of $\rho$ I wrapped the given metropolis code in a function with a parameter called _rho_. The function returns the mean of the accept.prob array. This enabled me to easily call the method and find acceptance rates for different values of $\rho$.
+
+```{r}
+source("MyFlintMetropolis.R")
+
+rho_candidates = seq(from=0.01, to=0.1, by=0.01)
+results = list()
+
+for(i in 1:length(rho_candidates)){
+  ar = run.simulation.metropolis(rho_candidates[i])
+  results[[i]] = list(acceptance_rate=ar, rho=rho_candidates[i])
+}
+
+#convert the list of lists to a matrix
+data = do.call(rbind, results)
+data
+```
+As we can see $\rho=0.03$ provides an acceptance rate of around 0.35.  
+
+ii)  
+Cleaning up my envinronment and running metropolis with $\rho=0.03$ I got the autocorrelation plots
+```{r}
+remove(list=ls())
+source("FlintMetropolis.R")  #value of rho is hard coded in the script
+
+acf(mu.sim)
+acf(sigma.2.sim)
+```
+  
+##### Part c
+
+Comparing the autocorrelation plots from both the samplers we can clearly see the the Gibb's sampler has faster mixing. The autocorrelation goes nearly down to zero in the second iteration itself for both $\mu$ and $\sigma^2$ whereas the Metropolis algorithm takes around 10 iterations for $\mu$ and 20 iterations for $\sigma^2$.
+
+### Question 2  
+
+##### Part a
+
+i. 
+```{r}
+remove(list=ls()) #Cleanup environment
+
+init_vals = list(list(mu=100, tau=100),
+                 list(mu=100, tau=0.01),
+                 list(mu=-100, tau=100),
+                 list(mu=-100, tau=0.01))
+
+polldata = read.table("polls2016", header = TRUE)
+polldata$sigma = polldata$ME/2
+
+m = jags.model("polls20161.bug", polldata, init_vals, n.chains = 4)
+```
+
+ii.  
+
+```{r}
+update(m, 2500)    #Burn in
+
+samples = coda.samples(m, c("mu", "tau"), n.iter = 5000)
+```
+
+iii. Trace plots for the monitored variables
+```{r}
+plot(samples)
+```
+
+  All the chains seem to be seem to be sampling from similar regions for both $\mu$ and $\tau$. They look like they have converged, at least thats what the trace plots seem to be indicating. The Gelman-Rubin measure will tell us more..  
+
+iv. The Gelman Rubin Statistic  
+```{r}
+gelman.diag(samples)
+gelman.plot(samples)
+```
+
+  As we can see from both the Gelman-Rubin statistic and the plot, the 4 chains seem to have converged. The value of $\hat{R}$ is close to 1 for both $\mu$ and $\tau$ and from the plots we can see the the value has indeed converged to 1 and stayed there for significant number of iterations.
+
+v. Below I have plotted the autocorrelation for $\mu$ and $\tau$ for the first chain. As we can see from the plots, the mixing for $\mu$ seems to be greater the the mixing rate for $\tau$. However, after about 30 iterations, both seem to be fairly close to 0.
+```{r}
+autocorr.plot(samples[[1]])
+```
+
+vi. Effective sizes
+```{r}
+effectiveSize(samples)
+```
+The effective sizes for both $\mu$ and $\tau$ are greater than the recommended number of 400. We should be ok.
+
+
+##### Part b
+
+i. Updated code for the new JAGS model is in a file called __mypolls20161.bug__, the contents of which are shared below:
+```
+model {
+  for (j in 1:length(y)) {
+    y[j] ~ dnorm(theta[j], 1/sigma[j]^2)
+    theta[j] ~ dnorm(mu, 1/tau^2)
+  }
+  
+  tau <- exp(logtau)
+
+  mu ~ dunif(-1000,1000)
+  logtau ~ dunif(-100,100)
+}
+```
+
+ii. 
+```{r}
+init_vals_2 = list(list(mu=100, logtau=log(100)),
+                 list(mu=100, logtau=log(0.01)),
+                 list(mu=-100, logtau=log(100)),
+                 list(mu=-100, logtau=log(0.01)))
+
+m2 = jags.model("mypolls20161.bug", polldata, init_vals_2, n.chains = 4)
+```
+
+iii. 
+```{r}
+update(m2, 2500)    #Burn in
+
+samples2 = coda.samples(m2, c("mu", "tau"), n.iter = 5000)
+```
+
+iv. Trace plots for $\mu$ and $\tau$
+```{r}
+plot(samples2)
+```
+  
+  From the trace plots we can clearly see that the 4 chains have not converged. $\mu$ is being sampled from 4 different regions by each of the chains. There is also virtually no mixing and so it is unlikely that the chains will converge even if we run it for a long time.
+
+v. The Gelman Rubin Statistic  
+```{r}
+gelman.diag(samples2)
+```
+Clearly $\mu$ has not converged at all whereas $\tau$ seems closer to convergence. However, the multivariate statistic is much greater than 1, which is evidence that, overall, the chains have not converged.
+
+vi. Autocorrelation plots for $\mu$ and $\tau$
+```{r}
+autocorr.plot(samples2[[1]])
+```
+
+  In addition to the trace plots, the autocorrelation plots also show that there is almost no mixing for $\mu$. $\tau$ seems to have relatively greater mixing. This confirms what the trace plots and the Gelman-Rubin statistic have told us before.
+
+vii. The second setup of the JAGS model resulted in an improper posterior.  
+
+$$
+\begin{align}
+P(\tau\mid\theta, \mu) &= P(\tau\mid\theta) &\text{since tau is conditionally independent of mu} \\
+&\propto P(\theta\mid\tau)P(\tau) \\
+&\propto \frac{1}{\sqrt{\tau}}e^{-\frac{1}{2\tau^2}(\theta-\mu)^2}e^\tau
+\end{align}
+$$
+
+Due to the $e^\tau$ term in that expression, the integral $\int_0^\infty P(\tau\mid\theta,\mu)d\tau$ would not be finite and thus cannot be normalised to 1. This proves the posterior $P(\tau\mid\theta, \mu)$ is improper, leading to the issues that we see in the second model.
