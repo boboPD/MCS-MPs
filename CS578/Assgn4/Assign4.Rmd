@@ -68,14 +68,14 @@ $$
 
 ```{r}
 initvals = list(
-  list(beta1=100, beta2=0.3, sigma2_inv=0.000001, .RNG.seed=10),
-  list(beta1=100, beta2=-0.7, sigma2_inv=0.000001, .RNG.seed=15),
-  list(beta1=-100, beta2=0.3, sigma2_inv=0.000001, .RNG.seed=20),
-  list(beta1=-100, beta2=-0.7, sigma2_inv=0.000001, .RNG.seed=25),
-  list(beta1=100, beta2=0.3, sigma2_inv=0.01, .RNG.seed=30),
-  list(beta1=100, beta2=-0.7, sigma2_inv=0.01, .RNG.seed=35),
-  list(beta1=-100, beta2=0.3, sigma2_inv=0.01, .RNG.seed=40),
-  list(beta1=-100, beta2=-0.7, sigma2_inv=0.01, .RNG.seed=45)
+  list(beta1=100, beta2=0.3, sigma2_inv=0.000001, .RNG.seed=10, .RNG.name="base::Wichmann-Hill"),
+  list(beta1=100, beta2=-0.7, sigma2_inv=0.000001, .RNG.seed=15, .RNG.name="base::Wichmann-Hill"),
+  list(beta1=-100, beta2=0.3, sigma2_inv=0.000001, .RNG.seed=20, .RNG.name="base::Wichmann-Hill"),
+  list(beta1=-100, beta2=-0.7, sigma2_inv=0.000001, .RNG.seed=25, .RNG.name="base::Wichmann-Hill"),
+  list(beta1=100, beta2=0.3, sigma2_inv=0.01, .RNG.seed=30, .RNG.name="base::Wichmann-Hill"),
+  list(beta1=100, beta2=-0.7, sigma2_inv=0.01, .RNG.seed=35, .RNG.name="base::Wichmann-Hill"),
+  list(beta1=-100, beta2=0.3, sigma2_inv=0.01, .RNG.seed=40, .RNG.name="base::Wichmann-Hill"),
+  list(beta1=-100, beta2=-0.7, sigma2_inv=0.01, .RNG.seed=45, .RNG.name="base::Wichmann-Hill")
 )
 
 model = jags.model("model.bug", data = data, inits = initvals, n.chains = 8)
@@ -87,18 +87,22 @@ samples = coda.samples(model, c("beta1", "beta2", "sigma2"), 2000)
 ##### Checking convergence:
 
 Traceplots
-```{r include=F}
+```{r}
 traceplot(samples)
 ```
+
+  
 The traceplots look like the sampling has converged. Now for the Gelman-Rubin statistic:
 ```{r}
 gelman.diag(samples)
 gelman.plot(samples)
 ```
+  
+  
 Gelman-Rubin statistic is 1 for all the variables. Thus we can conclude that they have all converged.
 
 ii. Summary of the variables:
-```{r include=F}
+```{r}
 summary(samples)
 ```
 iii.   
@@ -111,8 +115,8 @@ iv.
 __Posterior mean for the intercept__: 25.23
 __Posterior 95% C.I for the intercept__: [24.99, 25.47]
 
-d.  
-i.  Updated model
+d)  
+i)  Updated model
 
 ```
 model{
