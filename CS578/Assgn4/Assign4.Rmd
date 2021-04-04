@@ -1,0 +1,228 @@
+---
+title: "Assignment 4"
+author: "Pradyumna Das (pd10)"
+date: "03/04/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rjags)
+```
+
+Reading in the data
+```{r}
+data = read.csv("mooreslawdata.csv")
+head(data)
+data$TransistorCount = log(data$TransistorCount, 2)
+```
+
+
+a. 
+$$
+\begin{align}
+C &\approx \gamma 2^{A/2} \\
+\log_{2}C &\approx \log_{2}\gamma + \frac{A}{2}\log_{2}2 \\
+\log_{2}C &\approx \log_{2}\gamma + \frac{A}{2} \\
+\log_{2}C &\approx \beta_0 + \beta_1A
+\end{align}
+$$
+
+Where the constants $\log_{2}\gamma = \beta_0$ and $\frac{1}{2} = \beta_1$. Thus the coefficient of A is 1/2.
+
+b.  
+```{r}
+plot(data$Year, data$TransistorCount, ylab = "log(Transistor Count)", main = "Plot of the log of transistor count vs year")
+```
+c. 
+
+i.  JAGS model code
+```{r}
+data$Year_cent = data$Year - mean(data$Year)
+```
+
+```
+model{
+  for(i in 1:length(TransistorCount)){
+    TransistorCount ~ dnorm(beta1+beta2*Year_cent, sigma2_inv)
+  }
+  
+  beta1 ~ dnorm(0, 0.000001)
+  beta2 ~ dnorm(0, 0.000001)
+  sigma2 ~ 1/dgamma(0.001, 0.001)
+  
+  sigma2_inv <- 1/sigma2
+}
+
+```
+
+I fit a linear model to the data using _lm_ and found the intercept to be 25.23 with a SE of 0.12 and slope 0.49 with a SE of 0.0083. Thus I decided to use the following initial values
+
+$$
+\beta_1 = \pm 100 \\
+\beta_2 = 0.5 \pm 0.2 \\
+\sigma^2 = 100, 1000000
+$$
+
+##### Creating the model
+
+```{r}
+initvals = list(
+  list(beta1=100, beta2=0.3, sigma2_inv=0.000001, .RNG.seed=10),
+  list(beta1=100, beta2=-0.7, sigma2_inv=0.000001, .RNG.seed=15),
+  list(beta1=-100, beta2=0.3, sigma2_inv=0.000001, .RNG.seed=20),
+  list(beta1=-100, beta2=-0.7, sigma2_inv=0.000001, .RNG.seed=25),
+  list(beta1=100, beta2=0.3, sigma2_inv=0.01, .RNG.seed=30),
+  list(beta1=100, beta2=-0.7, sigma2_inv=0.01, .RNG.seed=35),
+  list(beta1=-100, beta2=0.3, sigma2_inv=0.01, .RNG.seed=40),
+  list(beta1=-100, beta2=-0.7, sigma2_inv=0.01, .RNG.seed=45)
+)
+
+model = jags.model("model.bug", data = data, inits = initvals, n.chains = 8)
+update(model, 3000)  #Burn in
+
+samples = coda.samples(model, c("beta1", "beta2", "sigma2"), 2000)
+```
+
+##### Checking convergence:
+
+Traceplots
+```{r include=F}
+traceplot(samples)
+```
+The traceplots look like the sampling has converged. Now for the Gelman-Rubin statistic:
+```{r}
+gelman.diag(samples)
+gelman.plot(samples)
+```
+Gelman-Rubin statistic is 1 for all the variables. Thus we can conclude that they have all converged.
+
+ii. Summary of the variables:
+```{r include=F}
+summary(samples)
+```
+iii.   
+__Posterior mean for the slope__: 0.49
+__Posterior 95% C.I for the slope__: [0.48, 0.51]
+
+The interval does contain the value 0.5 as predicted by Moore's law.
+
+iv.  
+__Posterior mean for the intercept__: 25.23
+__Posterior 95% C.I for the intercept__: [24.99, 25.47]
+
+d.  
+i.  Updated model
+
+```
+model{
+  for(i in 1:length(TransistorCount)){
+    TransistorCount[i] ~ dnorm(beta1+beta2*Year_cent[i], sigma2_inv)
+  }
+  
+  beta1 ~ dnorm(0, 0.000001)
+  beta2 ~ dnorm(0, 0.000001)
+  sigma2_inv ~ dgamma(0.001, 0.001)
+  
+  sigma2 <- 1/sigma2_inv
+  
+  for(j in 1:length(post_year)){
+    TC_pred[j] ~ dnorm(beta1+beta2*(post_year[j]-mean(Year)), sigma2_inv)
+  }
+  
+  pred <- 2^TC_pred
+  
+}
+```
+
+The last step has a 2 ^ TC_pred since I had taken log to the base 2. Next building and checking in the model
+
+```{r}
+listdata = as.list(data)
+listdata$post_year=1920:2030 #Predicting for the years 1920 to 2030
+k = jags.model("model2.bug", data = listdata, inits = initvals, n.chains = 8)
+update(k, 3000) #Burn in
+s = coda.samples(k, c("pred"), 2000)
+```
+
+Now to check convergence
+```{r}
+gelman.diag(s)
+```
+
+All the posterior predictive distributions have converged. 
+
+ii.  Printing the summary
+
+```{r}
+summary(s)
+```
+
+iii.  Now to find prediction for the year 2022. It happens to be pred[103]. Looking at the quantiles above, the 95% predictive interval is [4.393e+09, 3.812e+11] which is approx between 4.39B to 381B transistors. THe interval is very wide.
+
+iv. Looking at the summary output above, the first year where the mean transistor count happens to be at index 30. The corresponding year is:
+
+```{r}
+listdata$post_year[30]
+```
+
+Thus the model thinks that the transistor was invented in the year 1949. The 95% posterior interval is [6.083e-02, 6.421e+00].
+
+Mathematical explanation based on our model:
+
+$$
+\begin{align}
+\beta_1 + \beta_2(A_i - \bar{A}) &= y \\
+\beta_1 + \beta_2(A_i - \bar{A}) &= 0 &\text{find the point where the line meets the y-axis} \\
+A_i-\bar{A} &= -\frac{\beta_1}{\beta_2} \\
+A_i &= \bar{A} - \frac{\beta_1}{\beta_2}
+\end{align}
+$$
+
+e.  
+i. Setting up the params. Not running the JAGS model again since the previous samples variable is already present.
+```{r}
+params = as.matrix(samples)
+betas = t(params[, c("beta1", "beta2")])
+sigmas = params[, "sigma2"]
+```
+
+$$\epsilon\mid\sigma$$
+```{r}
+design_mat = data.frame(Intercept=1, year=data$Year_cent)  #182 x 2 matrix
+predictions = as.matrix(design_mat) %*% betas  #produces a 182 x 16000 matrix. each row contains 16000 predictions for a year
+errors = apply((predictions - data$TransistorCount), 1, function(a){a/sigmas})
+```
+
+ii. $$\epsilon^{rep}\mid\sigma$$
+```{r}
+TC_rep = matrix(NA, ncol = 16000, nrow = length(data$Year_cent))
+for(i in 1:length(data$Year_cent)){
+  TC_rep[i, ] = rnorm(16000, betas[1,] + betas[2,]*data$Year_cent[i], sigmas)
+}
+errors_rep = apply((TC_rep - data$TransistorCount), 1, function(a){a/sigmas})
+```
+
+iii. $$T(y, X, \theta)$$
+```{r}
+T_stat = apply(abs(errors), 1, max)
+```
+
+$$T(y^{rep}, X, \theta)$$
+```{r}
+T_rep_stat = apply(abs(errors_rep), 1, max)
+```
+
+iv.  Plot
+```{r}
+plot(T_rep_stat, T_stat)
+abline(0,1)
+```
+
+v. Posterior predictive p-value
+```{r}
+mean(T_rep_stat >= T_stat)
+```
+There are significantly more amount of outliers in the replicated dataset.
+
+vi.  The microprocessor F21 released in the year 1997 seems to be an outlier.
