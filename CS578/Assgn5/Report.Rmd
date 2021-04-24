@@ -1,0 +1,65 @@
+---
+title: "Assignment 5"
+author: "Pradyumna Das (pd10)"
+date: "23/04/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Some libraries I used:
+```{r}
+library(ggplot2)
+library(dplyr, warn.conflicts = F)
+```
+
+
+Reading in the data
+```{r}
+parkvisitdata = read.csv("usparkvisits.csv")
+```
+Preparing the data for plotting
+```{r}
+data_tidy=gather(parkvisitdata, Year, Count, -Name)
+data_tidy = mutate(data_tidy, log_Count=log(Count), Year=as.integer(substr(Year, 5, 8)))
+
+plot_data = ggplot(data_tidy, mapping = aes(group=Name, color=Name))
+```
+
+Plotting the number of visits vs year
+```{r}
+plot_data + geom_line(mapping = aes(as.factor(Year), Count), show.legend = F) + xlab("Year")
+```
+
+Plotting the number of log(visits) vs year
+```{r}
+plot_data + geom_line(mapping = aes(as.factor(Year), log_Count), show.legend = F) + xlab("Year") + ylab("log(Count)")
+```
+Fitting a linear model per park:
+```{r}
+data_tidy$year_cent = data_tidy$Year - mean(data_tidy$Year)  #Centering the year column
+coeffs = matrix(nrow = 30, ncol = 2, dimnames = list(parkvisitdata$Name, c("beta1", "beta2")))
+for(park_idx in 1:30){
+  coeffs[park_idx, ] = coef(lm(log_Count ~ year_cent, data_tidy[data_tidy$Name == parkvisitdata$Name[park_idx], c("log_Count", "year_cent")]))
+}
+```
+
+Scatterplot of the coefficients:
+```{r}
+ggplot(as.data.frame(coeffs)) + geom_point(mapping = aes(beta1, beta2)) 
+```
+Average of the coefficients:
+```{r}
+apply(coeffs, 2, mean)
+```
+variance of the coefficients:
+```{r}
+apply(coeffs, 2, var)
+```
+correlation between the coefficients
+```{r}
+cor(coeffs[, 1], coeffs[, 2])
+```
+
