@@ -13,6 +13,7 @@ Some libraries I used:
 ```{r}
 library(ggplot2)
 library(dplyr, warn.conflicts = F)
+library(rjags)
 ```
 
 
@@ -63,3 +64,96 @@ correlation between the coefficients
 cor(coeffs[, 1], coeffs[, 2])
 ```
 
+JAGS model code:
+```
+model{
+  for(j in 1:30){
+    for(i in 1:14){
+      log_Count[j, i] ~ dnorm(beta[1, j] + beta[2,j]*year_cent[i], sigmasqyinv)
+    }
+    beta[1:2, j] ~ dmnorm(mubeta, Sigmabetainv)
+  }
+  
+  mubeta = dmnorm(mubeta0, Sigmamubetainv)
+  Sigmabetainv ~ dwish(2*Sigma0, 2)
+  sigmasqyinv ~ dgamma(0.0001, 0.0001)
+  Sigmabeta <- inverse(Sigmabetainv)
+  rho <- Sigmabeta[1,2] / sqrt(Sigmabeta[1,1] * Sigmabeta[2,2])
+  sigmasqy <- 1/sigmasqyinv
+}
+```
+
+Setting up the data and initial values
+```{r}
+jags_data = list(
+  log_Count=log(as.matrix(parkvisitdata[, -1])),
+  year_cent = 2006:2019 - mean(2006:2019),
+  mubeta0 = c(0,0),
+  Sigmamubetainv = rbind(c(0.000001, 0),c(0, 0.000001)),
+  Sigma0 = rbind(c(100, 0),c(0, 0.1))
+)
+
+inits1 <- list(
+  list(sigmasqyinv = 10, mubeta = c(1000, 1000),
+       Sigmabetainv = rbind(c(100, 0),c(0, 100))),
+  list(sigmasqyinv = 0.001, mubeta = c(-1000, 1000),
+       Sigmabetainv = rbind(c(100, 0),c(0, 100))),
+  list(sigmasqyinv = 10, mubeta = c(1000, -1000),
+       Sigmabetainv = rbind(c(0.001, 0),c(0, 0.001))),
+  list(sigmasqyinv = 0.001, mubeta = c(-1000, -1000),
+       Sigmabetainv = rbind(c(0.001, 0),c(0, 0.001))))
+
+```
+
+Running the JAGS model:
+```{r}
+jags_model = jags.model("parkmodel.bug", jags_data, inits = inits1, n.chains = 4)
+
+update(jags_model, 3000) #burnin
+```
+Checking for convergence
+```{r}
+gelman.diag(coda.samples(jags_model, c("Sigmabeta", "rho", "sigmasqy"), 2000), autoburnin = F, multivariate = F)
+```
+Looks like the chains have not converged yet. Adding more burnin
+```{r}
+update(jags_model, 6000)
+gelman.diag(coda.samples(jags_model, c("Sigmabeta", "rho", "sigmasqy"), 2000), autoburnin = F, multivariate = F)
+```
+
+The chains have converged now. Taking some samples for inference:
+```{r}
+samples = coda.samples(jags_model, c("Sigmabeta", "rho", "sigmasqy", "mubeta"), 10000)
+effectiveSize(samples)
+```
+
+The effective sample sizes are well in excess of 4000. We can use these samples for inference
+
+Summary: 
+```{r}
+summary(samples)
+```
+
+__95% central posterior interval for rho is about [-0.45, 0.23]__
+
+density plot for rho
+```{r}
+densplot(samples[, "rho"])
+```
+Getting the samples as a matrix and calculating probability that rho < 0:
+```{r}
+samples_mat = as.matrix(samples)
+mean(samples_mat[, "rho"] < 0)
+```
+There is approximately a 75% chance that rho < 0
+
+95% posterior interval for $$e^{13\mu_{\beta_2}}$$:
+```{r}
+quantile(exp(13*samples_mat[, "mubeta[2]"]), c(0.025, 0.975))
+```
+
+DIC:
+```{r}
+dic.samples(jags_model, n.iter = 100000)
+```
+So the effective number of parameters is around 61.
