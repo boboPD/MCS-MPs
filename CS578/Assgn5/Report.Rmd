@@ -157,3 +157,93 @@ DIC:
 dic.samples(jags_model, n.iter = 100000)
 ```
 So the effective number of parameters is around 61.
+
+JAGS model code for the second model:
+```
+model{
+  for(j in 1:30){
+    for(i in 1:14){
+      log_Count[j, i] ~ dnorm(beta1[j] + beta2[j]*year_cent[i], sigmasqyinv)
+    }
+    beta1[j] ~ dnorm(mubeta1, 1/sigmasqbeta1)
+    beta2[j] ~ dnorm(mubeta2, 1/sigmasqbeta2)
+  }
+  
+  sigmasqyinv ~ dgamma(0.0001, 0.0001)
+  sigmasqy <- 1/sigmasqyinv
+  
+  mubeta1 ~ dnorm(0, 0.000001)
+  mubeta2 ~ dnorm(0, 0.000001)
+  
+  sigmabeta1 ~ dunif(0, 1000000)
+  sigmabeta2 ~ dunif(0, 1000)
+  sigmasqbeta1 <- sigmabeta1^2
+  sigmasqbeta2 <- sigmabeta2^2
+  
+}
+```
+
+Setting up the data and initial values:
+```{r}
+jags_data2 = list(
+  log_Count=log(as.matrix(parkvisitdata[, -1])),
+  year_cent = 2006:2019 - mean(2006:2019)
+)
+
+#Decided the initial values based on the posteriors of the previous analysis
+inits2 = list(
+  list(mubeta1=1000, mubeta2=1000, sigmabeta1=50, sigmabeta2=50, sigmasqyinv=10),
+  list(mubeta1=-1000, mubeta2=1000, sigmabeta1=0.0001, sigmabeta2=50, sigmasqyinv=0.001),
+  list(mubeta1=1000, mubeta2=-1000, sigmabeta1=50, sigmabeta2=0.0001, sigmasqyinv=10),
+  list(mubeta1=-1000, mubeta2=-1000, sigmabeta1=0.0001, sigmabeta2=0.0001, sigmasqyinv=0.001)
+)
+```
+
+Running the JAGS model:
+```{r}
+jags_model2 = jags.model("parkmodel2.bug", jags_data2, inits = inits2, n.chains = 4)
+
+update(jags_model2, 3000) #burnin
+```
+
+checking for convergence
+```{r}
+gelman.diag(coda.samples(jags_model2, c("mubeta1", "mubeta2", "sigmasqbeta1", "sigmasqbeta2", "sigmasqy"), n.iter = 2000), autoburnin = F)
+```
+
+Looks like the chains are still far from converging. Based on trial and error I found that this model required a really large number of iterations to converge.
+```{r}
+update(jags_model2, 15000000)
+gelman.diag(coda.samples(jags_model2, c("mubeta1", "mubeta2", "sigmasqbeta1", "sigmasqbeta2", "sigmasqy"), n.iter = 2000), autoburnin = F)
+```
+Now the chains seem to have somewhat converged. Taking 10000 samples for inference:
+```{r}
+samples2 = coda.samples(jags_model2, c("mubeta1", "mubeta2", "sigmasqbeta1", "sigmasqbeta2", "sigmasqy"), n.iter = 10000)
+effectiveSize(samples2)
+```
+
+the effective sizes are all greater than 4000 so ew should be ok. Summary of the samples:
+```{r}
+summary(samples2)
+```
+
+The values for $$\mu_{\beta_1}, \mu_{\beta_2} \space and\space  \sigma^2_y$$ largely agree with the previous model.
+
+95% posterior interval for $$e^{13\mu_{\beta_2}}$$:
+```{r}
+samples_mat2 = as.matrix(samples2)
+quantile(exp(13*samples_mat2[, "mubeta2"]), c(0.025, 0.975))
+```
+Comparing the two densities:
+```{r}
+vals = rbind(data.frame(values=exp(13*samples_mat[, "mubeta[2]"]), model="model1"), data.frame(values=exp(13*samples_mat2[, "mubeta2"]), model="model2"))
+ggplot(vals) + geom_density(mapping = aes(values, colour=model))
+```
+
+The density for the second model is narrower and far more peaked. Maybe our prior was too informative?
+
+DIC: 
+```{r}
+dic.samples(jags_model2, n.iter = 100000)
+```
+The effective number of parameters in this model is slightly lower, approx 58 compared to 61 in the previous model. This is to be expected since the covariances are not present in this model. The deviance is also lower for this model but only marginally. 43 for model 1 vs 41 for model 2. So we can say that both models are nearly equivalent (model 2 is very slightly better). 

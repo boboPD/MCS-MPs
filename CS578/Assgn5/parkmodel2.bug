@@ -1,0 +1,21 @@
+model{
+  for(j in 1:30){
+    for(i in 1:14){
+      log_Count[j, i] ~ dnorm(beta1[j] + beta2[j]*year_cent[i], sigmasqyinv)
+    }
+    beta1[j] ~ dnorm(mubeta1, 1/sigmasqbeta1)
+    beta2[j] ~ dnorm(mubeta2, 1/sigmasqbeta2)
+  }
+  
+  sigmasqyinv ~ dgamma(0.0001, 0.0001)
+  sigmasqy <- 1/sigmasqyinv
+  
+  mubeta1 ~ dnorm(0, 0.000001)
+  mubeta2 ~ dnorm(0, 0.000001)
+  
+  sigmabeta1 ~ dunif(0, 1000)
+  sigmabeta2 ~ dunif(0, 1000)
+  sigmasqbeta1 <- sigmabeta1^2
+  sigmasqbeta2 <- sigmabeta2^2
+  
+}
