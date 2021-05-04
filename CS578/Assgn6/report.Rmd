@@ -1,0 +1,130 @@
+---
+title: "Data Analysis Report"
+author: "Pradyumna Das (pd10)"
+date: "02/05/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, echo = FALSE)
+library(ggplot2)
+library(dplyr)
+library(rjags)
+```
+
+### Introduction
+
+
+### Data
+
+We are using an aggregated version of the data used by Roberto Rivera and Janet Rosenbaum in their study titled "Racial disparities in police stops in US cities". They in turn had taken the data from the Stanford Open Policing Project, comprised of a group of researchers studying police racial bias in most US states. The data collected by the researchers are available on their [website](https://openpolicing.stanford.edu/data/). 
+
+The dataset that we will be using for this analysis contains aggregated data for searches conducted by police in San Francisco between January 1, 2015 and June 30, 2016. The dataset contains 4 columns:
+1. **SubjectRace**: This column contains the race of the individuals stopped by the police. It is a discrete column with 5 values; API, Black, Hispanic, white, Other.  
+1. **District**: This columns contains a representation of the police district where the search occurred.  
+1. **ContrabandFound**: The total number of instances where the police found contraband upon the person being searched.  
+1. **TotalSearches**: Total number of stop and search instances that occurred
+
+Below is a boxplot showing the spread of the raw proportions of searches, by race,  that resulted in contraband being found:
+
+```{r}
+ggplot(d) + geom_boxplot(mapping = aes(SubjectRace, ContrabandFound/TotalSearches))
+```
+* The following race/distrct combinations have no searches:
+```{r}
+d %>% filter(TotalSearches == 0) %>% select(SubjectRace, District)
+```
+
+* The Asians/Pacific Islander group seems to have the highest proportion of searches that find contraband. However, we have to be wary since that group also has the highest variance stemming from the low number of total searches that happen.
+```{r}
+d %>% group_by(SubjectRace) %>% summarise(Searches=sum(TotalSearches))
+```
+Thus the result from raw proportions should not be trusted in this case.
+
+* The black community seems to have the lowest proportion of searches that find contraband in general. The variance is also lower because there are a lot more searches (in fact its significantly more than all the other races put together). Looking at the distribution of the searches by district we can see that the searches are unevenly distributed. Nearly half the number of searches all come from district "C".
+```{r}
+filter(d, SubjectRace=="Black") %>% ggplot() + geom_col(mapping = aes(District, TotalSearches, fill="Total Searches")) + geom_col(mapping = aes(District, ContrabandFound, fill="Contraband Found"))
+```
+### First model
+
+a. The first model that we use for our analysis is a logistic regression model with the following specification:  
+$$
+found_i \sim Bin(searches_i, p_i)\\
+logit(p_i) = \beta_{i}^{race} + \beta_{i}^{district} \\
+\beta^{race}_i \sim t(0, 10^2, 1) \\
+\beta^{district}_i \sim N(0, \sigma^2) \\
+\sigma \sim U(0, 10)
+$$
+We model the number of instances where contraband is found on a person given the total number of searches as a binomial distribution with some probability $$p_i$$ where $$p_i = \frac{1}{1 + e^{-(\beta_{i}^{race} + \beta_{i}^{district})}}$$.  
+Here $$\beta^{race}$$ and $$\beta^{district}$$ are the parameters of the model that control the probability. They are both random effects. $$\beta^{race}$$ is modeled as a t-distribution and $$\beta^{district}$$ is modeled as a normal distribution with mean 0 and variance $$\sigma^2$$. $$\sigma^2$$ is a hyper-parameter with a uniform distribution oven the range [0, 10]. 
+
+b.  JAGS code for the model
+```
+model {
+
+  for (i in 1:length(searches)) {
+    found[i] ~ dbin(prob[i], searches[i])
+    logit(prob[i]) <- betarace[race[i]] + betadistrict[district[i]]
+
+    foundrep[i] ~ dbin(prob[i], searches[i])
+  }
+
+  for (j in 1:max(race)) {
+    betarace[j] ~ dt(0, 0.01, 1)
+  }
+  
+  for (k in 1:max(district)) {
+    betadistrict[k] ~ dnorm(0, 1/sigmadistrict^2)
+  }
+
+  sigmadistrict ~ dunif(0,10)
+
+}
+
+```
+
+
+c. Summary of the details of JAGS run:  
+
+Number of chains used = 4
+Number of iterations of burn in: 15000
+Total number of samples from the posterior = 50000 * 4 = 200000
+Effective sample sizes were all above 2000
+No thinning was used
+
+d.
+```{r}
+ggplot(samples1_df) + geom_density(aes(sigmadistrict)) + geom_vline(xintercept = quantile(samples1_df$sigmadistrict, c(0.025, 0.975)), linetype=3) + ggtitle("Density of sigmadistrict")
+```
+As is evident from the plot, the 95% posterior confidence interval only includes positive values with a mode of around 0.4. Thus we can say with some confidence that sigmadistrict is positive which means that the different districts have different probabilities of contraband being found during a search (keeping the race constant).
+
+e. In our model, the log odds of contraband being found on the person is modeled as the sum of $$\beta^{race}$$ and $$\beta^{district}$$. Thus, keeping $$\beta^{district}$$ constant, if $$\beta_{B}$$ is lower than $$\beta_{W}$$ it means that the odds of a search unearthing contraband on a black person is lower than that of the white person.  
+
+Based on the above, we look at the posterior distributions of $$\beta_{B}$$ and $$\beta_{W}$$. We find that $$Pr(\beta_B < \beta_W) = 1$$. I also plotted the posterior distributions for both parameters below:
+```{r}
+ggplot(samples1_df) + geom_density(aes(`betarace[2]`, colour="Black")) + geom_density(aes(`betarace[5]`, colour="White"))
+```
+As is evident from the plot, there is almost no overlap between the parameters. We can thus conclude with confidence that the odds of a search unearthing contraband on a black person is lower than that of the white person.
+
+## Appendix
+
+Code to setup and run the jags model:
+
+```{r setting up the model1, eval=FALSE}
+jags_data = data.frame(found=d$ContrabandFound, race=unclass(d$SubjectRace), searches=d$TotalSearches, district=unclass(d$District))
+jags_data = filter(jags_data, searches != 0)
+
+inits1=list(list(betarace=c(5, -5, 5, -5, 5), sigmadistrict=5),
+           list(betarace=c(-5, 5, -5, 5, -5), sigmadistrict=0.01),
+           list(betarace=c(5, 5, 5, -5, -5), sigmadistrict=5),
+           list(betarace=c(-5, -5, 5, 5, 5), sigmadistrict=0.01))
+
+m1 = jags.model("firstmodel.bug", jags_data, inits = inits1, n.chains = 4)
+
+update(m1, 15000)
+```
+
+## Citations
+
+E. Pierson, C. Simoiu, J. Overgoor, S. Corbett-Davies, D. Jenson, A. Shoemaker, V. Ramachandran, P. Barghouty, C. Phillips, R. Shroff, and S. Goel. “A large-scale analysis of racial disparities in police stops across the United States”. Nature Human Behaviour, Vol. 4, 2020.
+
