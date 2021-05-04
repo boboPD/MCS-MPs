@@ -1,0 +1,23 @@
+model {
+
+  for (i in 1:length(searches)) {
+    found[i] ~ dbin(prob[i], searches[i])
+    logit(prob[i]) <- betarace[race[i]] + betadistrict[district[i]] + epsilon[i]
+
+    epsilon[i] ~ dnorm(0, 1/sigmaepsilon^2)
+    
+    foundrep[i] ~ dbin(prob[i], searches[i])
+  }
+
+  for (j in 1:max(race)) {
+    betarace[j] ~ dt(0, 0.01, 1)
+  }
+  
+  for (k in 1:max(district)) {
+    betadistrict[k] ~ dnorm(0, 1/sigmadistrict^2)
+  }
+
+  sigmadistrict ~ dunif(0,10)
+  sigmaepsilon ~ dunif(0, 10)
+
+}
