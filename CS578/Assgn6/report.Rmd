@@ -106,7 +106,7 @@ ggplot(samples1_df) + geom_density(aes(`betarace[2]`, colour="Black")) + geom_de
 ```
 As is evident from the plot, there is almost no overlap between the parameters. We can thus conclude with confidence that the odds of a search unearthing contraband on a black person is lower than that of the white person.  
 
-f. #TODO  
+f. The posterior p-value of the $$\chi^2$$ statistic is 0.02452 which indicates that there is overdispersion in this model.
 
 g.  Plummer's DIC for the above model:  
 
@@ -151,6 +151,8 @@ Number of iterations of burn in: 25000
 Total number of samples from the posterior = 50000 * 4 = 200000
 Effective sample sizes were all well above 2000
 No thinning was used
+
+I also calculated the posterior p-value of the $$\chi^2$$ statistic as before and found that for the second model the value was 0.41783 which indicates that the problem of overdispersion was indeed fixed by addition of the normally distributed error terms.
 
 c. The values of $$\beta_{B}$$ and $$\beta_{W}$$ remain largely unchanged by the addition of the random effect in the second model. The $$Pr(\beta_B < \beta_W) = 1$$ still. Also the posterior density plot is identical:
 ```{r}
@@ -225,8 +227,18 @@ gelman.diag(samples1)
 gelman.diag(samples2)
 
 # Code to calculate the posterior p-value for the chi-squared statistic
+prob = as.matrix(rep_samples1)[, paste("prob[",1:57,"]", sep="")]
+found = as.matrix(rep_samples1)[, paste("foundrep[",1:57,"]", sep="")]
+chi = numeric(200000)
+chirep = numeric(200000)
 
+# The dataframe nonzerodata contains the data after filtering out the rows with TotalSearches = 0 in the raw data. 
+for(i in 1:200000){
+  chi[i] = sum((nonzerodata$ContrabandFound - prob[i, ]*nonzerodata$TotalSearches)^2/(nonzerodata$TotalSearches*prob[i, ]*(1-prob[i, ])))
+  chirep[i] = sum((found[i, ] - prob[i, ]*nonzerodata$TotalSearches)^2/(nonzerodata$TotalSearches*prob[i, ]*(1-prob[i, ])))
+}
 ```
+
 Code for the plots:
 
 ```{r eval=FALSE}
