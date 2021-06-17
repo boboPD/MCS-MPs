@@ -75,14 +75,7 @@ shinyServer(function(input, output) {
     })
     
     output$rawdatatbl = renderDataTable({
-        if(input$region != "All"){
-            temp = filter(complete_data, Region == input$region)
-        }
-        else{
-            temp = complete_data
-        }
-        
-        temp %>% 
+        complete_data %>% 
             filter(Region == input$rawdata_region & IncomeGroup %in% input$rawdata_incgrp & Gender %in% input$rawdata_gender) %>%
             rename(Country=TableName) %>% select(-IndicatorCode, -CountryCode) %>% select(Country, everything())
     })
