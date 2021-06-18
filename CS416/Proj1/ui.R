@@ -8,6 +8,7 @@
 #
 
 library(shiny)
+library(plotly)
 
 regions = list("All","Latin America & Caribbean","South Asia","Sub-Saharan Africa",
                "Europe & Central Asia","Middle East & North Africa","East Asia & Pacific",
