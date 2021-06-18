@@ -9,6 +9,7 @@
 
 library(shiny)
 library(ggplot2)
+library(plotly)
 
 source("data_cleanup.R")
 
@@ -68,8 +69,8 @@ shinyServer(function(input, output) {
     })
     
     
-    output$edu_empl_scatter = renderPlot({
-        ggplot(filter(scatter_plot_data, Year==input$yearslider)) + geom_point(aes(Education, Employment, colour=IncomeGroup), size = 10, alpha=0.6) +
+    output$edu_empl_scatter = renderPlotly({
+        ggplot(filter(scatter_plot_data, Year==input$yearslider)) + geom_point(aes(Education, Employment, name=Country, colour=IncomeGroup), size = 10, alpha=0.6) +
             scale_colour_manual("Income Group", values = c("red", "orange", "green", "darkgreen")) +
             ylab("Average % of employment across sectors") + xlab("Average % of population having at least lower secondary education")
     })

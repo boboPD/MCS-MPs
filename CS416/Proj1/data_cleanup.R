@@ -31,6 +31,6 @@ edu_data_ls = complete_data %>% filter(IndicatorSubType == "Lower Secondary")
 empl_data_ind = complete_data %>% filter(IndicatorSubType == "Industry")
 empl_data_svc = complete_data %>% filter(IndicatorSubType == "Service")
 
-scatter_plot_data = complete_data %>% group_by(IndicatorType, IncomeGroup, Year, CountryCode) %>% 
+scatter_plot_data = complete_data %>% group_by(IndicatorType, IncomeGroup, Year, TableName) %>% rename(Country=TableName) %>%
   summarise(mean_value=mean(value, na.rm = T)) %>% pivot_wider(names_from = IndicatorType, values_from=mean_value) %>%
   filter(!is.na(Employment) & !is.na(Education))

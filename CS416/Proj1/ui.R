@@ -37,7 +37,7 @@ mainPanelContent = function(){
              fluidRow(tags$hr()),
              wellPanel(
                fluidRow(tags$h4("Relation between education and employment")),
-               fluidRow(plotOutput("edu_empl_scatter")),
+               fluidRow(plotlyOutput("edu_empl_scatter")),
                fluidRow(
                  column(4, offset = 4, sliderInput("yearslider", "Year", min = 2000, max = 2018, step = 1, value = 2000, animate = T))
                )
@@ -61,7 +61,7 @@ sideBarContent = function(){
 
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(
-  titlePanel(title = "Visualising the correlation between education and employment"),
+  titlePanel(title = "Visualising the correlation between education and employment in industry and services sectors"),
   sidebarLayout(
     sidebarPanel(sideBarContent(), width = 2),
     mainPanel(mainPanelContent(), width = 10)
