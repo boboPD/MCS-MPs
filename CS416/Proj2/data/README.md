@@ -1,0 +1,1 @@
+This raw source data has been taken from the [Berkely Earth Project](http://berkeleyearth.org/). You can find the original dataset [here](http://berkeleyearth.org/archive/source-files/). The data.csv file has been created by joining the temperature data with the measurement station data files.

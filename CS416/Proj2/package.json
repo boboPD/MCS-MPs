@@ -1,0 +1,23 @@
+{
+  "dependencies": {
+    "@types/d3": "^7.0.0",
+    "concurrently": "^6.2.0",
+    "d3": "^7.0.0",
+    "lite-server": "^2.6.1",
+    "rollup": "^2.53.1",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "typescript": "^4.3.5"
+  },
+  "scripts": {
+    "build": "tsc -w",
+    "serve": "lite-server",
+    "start": "concurrently \"npm run build\" \"npm run serve\""
+  },
+  "name": "proj2",
+  "version": "1.0.0",
+  "description": "Data Viz Proj 2",
+  "main": "dist/index.js",
+  "devDependencies": {},
+  "author": "Pradyumna Das",
+  "license": "ISC"
+}
