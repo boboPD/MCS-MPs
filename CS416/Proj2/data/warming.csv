@@ -1,0 +1,238 @@
+Country,Warming,Error,Region
+Afghanistan,3.32,0.34,Asia
+Åland,3.01,0.24,Europe
+Albania,1.97,0.28,Europe
+Algeria,2.86,0.28,Africa
+American Samoa,1.43,0.57,NA
+Andorra,2.75,0.29,Europe
+Angola,1.61,0.34,Africa
+Anguilla,1.91,0.31,NA
+Antarctica,1.05,0.76,NA
+Antigua and Barbuda,1.86,0.28,NA
+Argentina,1.11,0.26,South America
+Armenia,2.38,0.29,Asia
+Aruba,1.31,0.34,South America
+Australia,1.4,0.25,Oceania
+Austria,2.9,0.28,Europe
+Azerbaijan,2.57,0.35,Asia
+Bahamas,1.53,0.29,North America
+Bahrain,3.13,0.55,Asia
+Baker Island,1.22,0.17,Asia
+Bangladesh,0.9,0.41,Asia
+Barbados,1.66,0.32,NA
+Belarus,3.16,0.21,Europe
+Belgium,2.84,0.2,Europe
+Belize,1.23,0.26,North America
+Benin,1.82,0.42,Africa
+Bhutan,1.25,0.6,Asia
+Bolivia,0.65,0.29,South America
+"Bonaire, Saint Eustatius and Saba",1.43,0.34,South America
+Bosnia and Herzegovina,2.61,0.3,Europe
+Botswana,1.38,0.29,Africa
+Brazil,1.7,0.17,South America
+British Virgin Islands,1.88,0.3,NA
+Bulgaria,2.01,0.25,Europe
+Burkina Faso,1.79,0.34,Africa
+Burma,0.99,0.3,Asia
+Burundi,1.9,0.24,Africa
+Cambodia,1.05,0.27,Asia
+Cameroon,1.61,0.41,Africa
+Canada,3.64,0.24,North America
+Cape Verde,2.09,0.57,NA
+Cayman Islands,1.47,0.3,NA
+Central African Republic,1.78,0.33,Africa
+Chad,2.07,0.6,Africa
+Chile,0.96,0.37,South America
+China,2.09,0.23,Asia
+Christmas Island,1.6,0.27,NA
+Colombia,1.23,0.22,South America
+Comoros,1.92,0.32,NA
+Congo,1.47,0.43,Africa
+Congo (Democratic Republic of the),1.7,0.23,Africa
+Costa Rica,1.6,0.45,North America
+Côte d'Ivoire,1.8,0.29,Africa
+Croatia,2.82,0.31,Europe
+Cuba,1.46,0.25,North America
+Curaçao,1.32,0.37,South America
+Cyprus,1.92,0.33,Asia
+Czech Republic,2.73,0.26,Europe
+Denmark,3.56,0.74,North America
+Denmark (Europe),2.86,0.23,Europe
+Djibouti,2.29,0.44,Africa
+Dominica,1.75,0.31,North America
+Dominican Republic,1.67,0.33,North America
+Ecuador,1.31,0.36,South America
+Egypt,2.03,0.33,Africa
+El Salvador,1.41,0.3,North America
+Equatorial Guinea,1.48,0.39,Africa
+Eritrea,2.29,0.39,Africa
+Estonia,3.01,0.27,Europe
+Ethiopia,2.19,0.25,Africa
+Falkland Islands (Islas Malvinas),1.37,0.38,South America
+Faroe Islands,1.74,0.63,NA
+Federated States of Micronesia,1.79,0.51,NA
+Fiji,1.3,0.44,Oceania
+Finland,3.03,0.27,Europe
+France,2.6,0.21,NA
+France (Europe),2.77,0.22,Europe
+French Guiana,1.85,0.22,South America
+French Polynesia,1.58,0.46,NA
+French Southern and Antarctic Lands,1.67,0.67,NA
+Gabon,1.47,0.45,Africa
+Gambia,1.86,0.39,Africa
+Gaza Strip,2.05,0.21,Asia
+Georgia,2.1,0.26,Asia
+Germany,2.81,0.21,Europe
+Ghana,1.75,0.37,Africa
+Greece,1.78,0.27,Europe
+Greenland,3.57,0.75,North America
+Grenada,1.62,0.33,NA
+Guadeloupe,1.83,0.28,North America
+Guam,1.24,0.33,NA
+Guatemala,1.22,0.3,North America
+Guernsey,2.5,0.28,Europe
+Guinea,1.8,0.27,Africa
+Guinea-Bissau,1.85,0.37,Africa
+Guyana,1.62,0.28,South America
+Haiti,1.54,0.3,North America
+Heard Island and McDonald Islands,1.49,0.6,NA
+Honduras,1.44,0.27,North America
+Hong Kong,0.83,0.27,Asia
+Hungary,2.55,0.23,Europe
+Iceland,2.37,0.44,Europe
+India,1.44,0.3,Asia
+Indonesia,1.21,0.18,Asia
+Iran,3.52,0.37,Asia
+Iraq,2.54,0.45,Asia
+Ireland,2.03,0.36,Europe
+Isle of Man,2.3,0.29,Europe
+Israel,2.03,0.21,Asia
+Italy,2.64,0.22,Europe
+Jamaica,1.46,0.26,North America
+Japan,1.66,0.23,Asia
+Jersey,2.5,0.28,Europe
+Jordan,2.1,0.29,Asia
+Kazakhstan,2.48,0.26,Asia
+Kenya,1.86,0.2,Africa
+Kingman Reef,1.71,0.84,NA
+Kiribati,1.73,0.94,NA
+Kuwait,2.86,0.65,Asia
+Kyrgyzstan,2.47,0.24,Asia
+Laos,0.96,0.28,Asia
+Latvia,3.05,0.26,Europe
+Lebanon,1.97,0.19,Asia
+Lesotho,1.17,0.38,Africa
+Liberia,1.81,0.31,Africa
+Libya,2.54,0.63,Africa
+Liechtenstein,2.83,0.31,Europe
+Lithuania,2.98,0.23,Europe
+Luxembourg,2.83,0.19,Europe
+Macau,0.79,0.29,Asia
+Macedonia,2.03,0.3,Europe
+Madagascar,1.93,0.35,Africa
+Malawi,1.94,0.33,Africa
+Malaysia,1.27,0.15,Asia
+Mali,1.94,0.45,Africa
+Malta,2.74,0.41,NA
+Martinique,1.75,0.31,North America
+Mauritania,2.28,0.63,Africa
+Mauritius,2.03,0.27,Africa
+Mayotte,1.89,0.34,NA
+Mexico,1.58,0.29,North America
+Moldova,2.38,0.23,Europe
+Monaco,2.76,0.3,Europe
+Mongolia,2.92,0.35,Asia
+Montenegro,2.14,0.25,Europe
+Montserrat,1.85,0.28,NA
+Morocco,2.71,0.23,Africa
+Mozambique,1.73,0.23,Africa
+Namibia,1.51,0.72,Africa
+Nepal,1.65,0.34,Asia
+Netherlands,2.89,0.21,Europe
+Netherlands (Europe),2.92,0.21,Europe
+New Caledonia,1.81,0.35,Oceania
+New Zealand,0.97,0.24,Oceania
+Nicaragua,1.55,0.39,North America
+Niger,2.27,0.64,Africa
+Nigeria,1.88,0.43,Africa
+Niue,1.38,0.57,NA
+North Korea,2.44,0.23,Asia
+Northern Mariana Islands,1.24,0.33,NA
+Norway,3.15,0.37,Europe
+Oman,2.96,0.52,Asia
+Pakistan,2.72,0.28,Asia
+Palau,0.91,0.27,NA
+Palestina,1.71,0.3,NA
+Palmyra Atoll,1.72,0.84,NA
+Panama,1.52,0.32,North America
+Papua New Guinea,1.24,0.27,Oceania
+Paraguay,1.18,0.49,South America
+Peru,0.95,0.34,South America
+Philippines,0.97,0.27,Asia
+Poland,2.79,0.23,Europe
+Portugal,2.32,0.27,Europe
+Puerto Rico,1.84,0.32,North America
+Qatar,3.3,0.49,Asia
+Reunion,2,0.27,Africa
+Romania,2.18,0.19,Europe
+Russia,3.39,0.28,Asia
+Rwanda,1.87,0.23,Africa
+Saint Barthélemy,1.91,0.31,NA
+Saint Kitts and Nevis,1.83,0.27,NA
+Saint Lucia,1.66,0.3,NA
+Saint Martin,1.91,0.31,NA
+Saint Pierre and Miquelon,2.35,0.43,South America
+Saint Vincent and the Grenadines,1.65,0.3,NA
+Samoa,1.41,0.55,Oceania
+San Marino,2.86,0.3,Europe
+Sao Tome and Principe,1.54,0.4,NA
+Saudi Arabia,2.58,0.5,Asia
+Senegal,1.87,0.34,Africa
+Serbia,2.27,0.27,Europe
+Seychelles,1.8,0.46,NA
+Sierra Leone,1.82,0.28,Africa
+Singapore,1.45,0.22,Asia
+Sint Maarten,1.91,0.31,NA
+Slovakia,2.51,0.25,Europe
+Slovenia,3.07,0.28,Europe
+Solomon Islands,1.62,0.5,Oceania
+Somalia,2.14,0.5,Africa
+South Africa,1.23,0.37,Africa
+South Georgia and the South Sandwich Isla,1.85,0.76,NA
+South Korea,2,0.21,Asia
+Spain,2.57,0.24,Europe
+Sri Lanka,1.37,0.28,Asia
+Sudan,2.04,0.22,Africa
+Suriname,1.75,0.22,South America
+Svalbard and Jan Mayen,5.45,0.81,Europe
+Swaziland,1.43,0.31,Africa
+Sweden,2.95,0.27,Europe
+Switzerland,2.83,0.23,Europe
+Syria,1.95,0.19,Asia
+Taiwan,1.46,0.28,Asia
+Tajikistan,2.66,0.28,Asia
+Tanzania,1.98,0.27,Africa
+Thailand,1.07,0.24,Asia
+Timor-Leste,0.9,0.41,Asia
+Togo,1.75,0.46,Africa
+Tonga,1.34,0.43,NA
+Trinidad and Tobago,1.6,0.37,South America
+Tunisia,3.12,0.31,Africa
+Turkey,1.6,0.22,Asia
+Turkmenistan,3.19,0.26,Asia
+Turks and Caicas Islands,1.5,0.39,NA
+Uganda,1.78,0.17,Africa
+Ukraine,2.66,0.21,Europe
+United Arab Emirates,3.36,0.57,Asia
+United Kingdom,2.3,0.26,Europe
+United Kingdom (Europe),2.35,0.26,Europe
+United States,2.36,0.13,North America
+Uruguay,1.56,0.45,South America
+Uzbekistan,2.72,0.29,Asia
+Venezuela,1.33,0.31,South America
+Vietnam,0.91,0.27,Asia
+Virgin Islands,1.88,0.3,NA
+Western Sahara,2.49,0.69,Africa
+Yemen,2.5,0.55,Asia
+Zambia,1.77,0.27,Africa
+Zimbabwe,1.5,0.22,Africa
