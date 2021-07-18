@@ -1,0 +1,9 @@
+.hiddenPage{
+    visibility: hidden;
+}
+
+.currentPage {
+    visibility: visible;
+    height: 50%;
+    width: 50%;
+}

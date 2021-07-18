@@ -1,9 +1,25 @@
 <html>
     <head>
         <title>World Average Temperature Over Time</title>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
         <script src="dist/index.js"></script>
+        <link rel="stylesheet" href="dist/index.css"/>
     </head>
-    <body>
-        <svg height=300px width=300px></svg>
+    <body onload="init()">
+        <div id="page" width="100%" height="100%">
+            <svg id="page1" class="hiddenPage">
+                <rect width="300px" height="300px"></rect>
+            </svg>
+            <svg id="page2" class="hiddenPage">
+                <circle cx="150px" cy="150px" r="20px"></circle>
+            </svg>
+            <svg id="page3" class="hiddenPage">
+                <rect width="300px" height="300px" fill="red"></rect>
+            </svg>
+        </div>
+        <div id="navigation">
+            <button id="previousBtn" onclick="updatePage('previous')">Previous</button>
+            <button id="nextBtn" onclick="updatePage('next')">Next</button>
+        </div>
     </body>
 </html>
