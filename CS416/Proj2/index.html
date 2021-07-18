@@ -6,20 +6,21 @@
         <link rel="stylesheet" href="dist/index.css"/>
     </head>
     <body onload="init()">
-        <div id="page" width="100%" height="100%">
-            <svg id="page1" class="hiddenPage">
-                <rect width="300px" height="300px"></rect>
-            </svg>
-            <svg id="page2" class="hiddenPage">
-                <circle cx="150px" cy="150px" r="20px"></circle>
-            </svg>
-            <svg id="page3" class="hiddenPage">
-                <rect width="300px" height="300px" fill="red"></rect>
-            </svg>
-        </div>
-        <div id="navigation">
-            <button id="previousBtn" onclick="updatePage('previous')">Previous</button>
-            <button id="nextBtn" onclick="updatePage('next')">Next</button>
+        <div id="page">
+            <div id="loadingPage">
+                <h1>Loading data...</h1>
+            </div>
+            <div id="mainPage" hidden>
+                <div id="charts">
+                    <svg id="page1" class="hiddenPage"></svg>
+                    <svg id="page2" class="hiddenPage"></svg>
+                    <svg id="page3" class="hiddenPage"></svg>
+                </div>
+                <div id="navigation">
+                    <button id="previousBtn" onclick="updatePage('previous')">Previous</button>
+                    <button id="nextBtn" onclick="updatePage('next')">Next</button>
+                </div>
+            </div>
         </div>
     </body>
 </html>
