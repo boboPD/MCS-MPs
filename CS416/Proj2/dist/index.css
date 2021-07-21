@@ -8,8 +8,8 @@
 }
 
 #charts {
-    height: 80%;
     width: 100%;
+    height: 55%;
 }
 
 #mainPage {
@@ -19,10 +19,17 @@
 
 #navigation {
     float: right;
-    height: 20%;
 }
 
 #page1 {
     height: 90%;
     width: 90%;
+}
+
+.small {
+    font: italic 13px sans-serif; 
+}
+
+.chart-description {
+    margin: 30px;
 }
