@@ -2,10 +2,11 @@
 function init() {
     sessionStorage.setItem("currentPage", "1");
     var p1 = fetchChart1Data().then(function (data) { return buildChart1(data); });
-    Promise.all([p1]).then(function () {
+    var p2 = fetchChart2Data().then(function (data) { return buildChart2(data); });
+    Promise.all([p1, p2]).then(function () {
         document.getElementById("loadingPage").hidden = true;
         document.getElementById("mainPage").hidden = false;
-        d3.select("#page1").classed("hiddenPage", false).classed("currentPage", true);
+        d3.select("#page1div").classed("hiddenPage", false).classed("currentPage", true);
     });
 }
 function getCurrentPage() {
@@ -19,17 +20,17 @@ function isButtonReq(moveDirection) {
 function updatePage(moveDirection) {
     var currentPage = getCurrentPage();
     var nextPage = moveDirection == 'next' ? currentPage + 1 : currentPage - 1;
-    d3.select("#page" + currentPage).classed("hiddenPage", true).classed("currentPage", false);
-    d3.select("#page" + nextPage).classed("hiddenPage", false).classed("currentPage", true);
+    d3.select("#page" + currentPage + "div").classed("hiddenPage", true).classed("currentPage", false);
+    d3.select("#page" + nextPage + "div").classed("hiddenPage", false).classed("currentPage", true);
     sessionStorage.setItem("currentPage", nextPage.toString());
     document.getElementById("previousBtn").disabled = !isButtonReq("previous");
     document.getElementById("nextBtn").disabled = !isButtonReq("next");
 }
 function buildChart1(data) {
-    var height = 300, width = 800, padding = 30;
-    var xs = d3.scaleLinear().domain([1740, 2020]).range([0, width]);
-    var ys = d3.scaleLinear().domain([4, 12]).range([height, 0]);
-    var page1svg = d3.select("#page1");
+    var height = 500, width = 1000, padding = 20;
+    var xs = d3.scaleLinear().domain([1740, 2020]).range([0, width - 2 * padding]);
+    var ys = d3.scaleLinear().domain([4, 12]).range([height - 2 * padding, 0]);
+    var page1svg = d3.select("#page1").attr("viewBox", "0 0 " + width + " " + height);
     var line = d3.line().x(function (d) { return xs(d.Year); }).y(function (d) { return ys(d.temperature); });
     var temphighs = data.map(function (item) {
         return [xs(item.Year), ys(item.temperature + item.uncertainty)];
@@ -37,7 +38,7 @@ function buildChart1(data) {
     var templows = data.map(function (item) {
         return [xs(item.Year), ys(item.temperature - item.uncertainty)];
     });
-    page1svg.append("g").attr("transform", "translate(" + padding + ", " + (height + padding) + ")").call(d3.axisBottom(xs).ticks(28));
+    page1svg.append("g").attr("transform", "translate(" + padding + ", " + (height - padding) + ")").call(d3.axisBottom(xs).ticks(28));
     page1svg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")").call(d3.axisLeft(ys));
     var linegrp = page1svg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")");
     linegrp.append("g").append("path").attr("d", line(data)).attr("stroke", "blue").attr("fill", "none");
@@ -90,6 +91,40 @@ function fetchChart1Data() {
             }
         }
         return res;
+    });
+}
+function fetchChart2Data() {
+    var res = {};
+    return d3.csv("https://raw.githubusercontent.com/boboPD/MCS-MPs/master/CS416/Proj2/data/warming.csv").then(function (data) {
+        var _a;
+        for (var _i = 0, data_2 = data; _i < data_2.length; _i++) {
+            var item = data_2[_i];
+            if (item["Country"] && item["Warming"] && item["Error"]) {
+                res[item["Country"]] = {
+                    Warming: parseFloat(item["Warming"]),
+                    Error: parseFloat(item["Error"]),
+                    Region: (_a = item["Region"]) !== null && _a !== void 0 ? _a : ""
+                };
+            }
+        }
+        return res;
+    });
+}
+function buildChart2(data) {
+    return d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson").then(function (topo) {
+        var proj = d3.geoEquirectangular().scale(60).translate([200, 100]);
+        var path = d3.geoPath(proj);
+        var colorScale = d3.scaleLinear()
+            .domain([0, 4])
+            .range(["blue", "red"]);
+        var page2svg = d3.select("#page2").attr("viewBox", "0 0 400 300");
+        page2svg.append("g").selectAll("path").data(topo.features).join("path")
+            .attr("d", path).attr("fill", function (d) {
+            if (data[d.properties.name])
+                return colorScale(data[d.properties.name].Warming);
+            else
+                return "green";
+        });
     });
 }
 //# sourceMappingURL=index.js.map
