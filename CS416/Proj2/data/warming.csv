@@ -33,7 +33,7 @@ Brazil,1.7,0.17,South America
 British Virgin Islands,1.88,0.3,NA
 Bulgaria,2.01,0.25,Europe
 Burkina Faso,1.79,0.34,Africa
-Burma,0.99,0.3,Asia
+Myanmar,0.99,0.3,Asia
 Burundi,1.9,0.24,Africa
 Cambodia,1.05,0.27,Asia
 Cameroon,1.61,0.41,Africa
@@ -47,10 +47,10 @@ China,2.09,0.23,Asia
 Christmas Island,1.6,0.27,NA
 Colombia,1.23,0.22,South America
 Comoros,1.92,0.32,NA
-Congo,1.47,0.43,Africa
-Congo (Democratic Republic of the),1.7,0.23,Africa
+Republic of the Congo,1.47,0.43,Africa
+Democratic Republic of the Congo,1.7,0.23,Africa
 Costa Rica,1.6,0.45,North America
-Côte d'Ivoire,1.8,0.29,Africa
+Ivory Coast,1.8,0.29,Africa
 Croatia,2.82,0.31,Europe
 Cuba,1.46,0.25,North America
 Curaçao,1.32,0.37,South America
@@ -73,8 +73,7 @@ Faroe Islands,1.74,0.63,NA
 Federated States of Micronesia,1.79,0.51,NA
 Fiji,1.3,0.44,Oceania
 Finland,3.03,0.27,Europe
-France,2.6,0.21,NA
-France (Europe),2.77,0.22,Europe
+France,2.77,0.22,Europe
 French Guiana,1.85,0.22,South America
 French Polynesia,1.58,0.46,NA
 French Southern and Antarctic Lands,1.67,0.67,NA
@@ -92,7 +91,7 @@ Guam,1.24,0.33,NA
 Guatemala,1.22,0.3,North America
 Guernsey,2.5,0.28,Europe
 Guinea,1.8,0.27,Africa
-Guinea-Bissau,1.85,0.37,Africa
+Guinea Bissau,1.85,0.37,Africa
 Guyana,1.62,0.28,South America
 Haiti,1.54,0.3,North America
 Heard Island and McDonald Islands,1.49,0.6,NA
@@ -188,7 +187,7 @@ San Marino,2.86,0.3,Europe
 Sao Tome and Principe,1.54,0.4,NA
 Saudi Arabia,2.58,0.5,Asia
 Senegal,1.87,0.34,Africa
-Serbia,2.27,0.27,Europe
+Republic of Serbia,2.27,0.27,Europe
 Seychelles,1.8,0.46,NA
 Sierra Leone,1.82,0.28,Africa
 Singapore,1.45,0.22,Asia
@@ -196,6 +195,7 @@ Sint Maarten,1.91,0.31,NA
 Slovakia,2.51,0.25,Europe
 Slovenia,3.07,0.28,Europe
 Solomon Islands,1.62,0.5,Oceania
+Somaliland,2.14,0.5,Africa
 Somalia,2.14,0.5,Africa
 South Africa,1.23,0.37,Africa
 South Georgia and the South Sandwich Isla,1.85,0.76,NA
@@ -211,7 +211,7 @@ Switzerland,2.83,0.23,Europe
 Syria,1.95,0.19,Asia
 Taiwan,1.46,0.28,Asia
 Tajikistan,2.66,0.28,Asia
-Tanzania,1.98,0.27,Africa
+United Republic of Tanzania,1.98,0.27,Africa
 Thailand,1.07,0.24,Asia
 Timor-Leste,0.9,0.41,Asia
 Togo,1.75,0.46,Africa
@@ -224,9 +224,9 @@ Turks and Caicas Islands,1.5,0.39,NA
 Uganda,1.78,0.17,Africa
 Ukraine,2.66,0.21,Europe
 United Arab Emirates,3.36,0.57,Asia
-United Kingdom,2.3,0.26,Europe
+England,2.3,0.26,Europe
 United Kingdom (Europe),2.35,0.26,Europe
-United States,2.36,0.13,North America
+USA,2.36,0.13,North America
 Uruguay,1.56,0.45,South America
 Uzbekistan,2.72,0.29,Asia
 Venezuela,1.33,0.31,South America
