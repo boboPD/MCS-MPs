@@ -4,6 +4,7 @@ function init(): void {
     sessionStorage.setItem("currentPage", "1");
     const p1 = fetchChart1Data().then(data => buildChart1(data));
     const p2 = fetchChart2Data().then(data => {return buildChart2(data)});
+    const p3 = fetchChart3Data();
     Promise.all([p1, p2]).then(() => {
         document.getElementById("loadingPage")!.hidden = true;
         document.getElementById("mainPage")!.hidden = false;
@@ -135,6 +136,28 @@ function fetchChart2Data(): Promise<{ [country: string]: CountryData}> {
     );
 }
 
+function fetchChart3Data(): Promise<{ [country: string]: CountryDetailData[]}> {
+    let res: { [country: string]: CountryDetailData[]} = {};
+
+    return d3.csv("https://raw.githubusercontent.com/boboPD/MCS-MPs/master/CS416/Proj2/data/data.csv").then(
+        data => {
+            for (const item of data) {
+                if (item["Country"] && !(item["Country"] in res)) {
+                    res["Country"] = [];
+                }
+                res["Country"].push({
+                    Month: item["Month"] ?? "Unknown",
+                    Year: parseInt(item["Year"] ?? "-1"),
+                    Temperature: parseFloat(item["Temperature"] ?? "999"),
+                    StationName: item["StationName"] ?? "Unknown"
+                });
+            }
+
+            return res;
+        }
+    );
+}
+
 function buildChart2(data: { [country: string]: CountryData}): Promise<any> {
     return d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson").then(
         (topo: any) => {
@@ -151,6 +174,13 @@ function buildChart2(data: { [country: string]: CountryData}): Promise<any> {
                             return colorScale(data[d.properties.name].Warming);
                         else
                             return "green";
+                    }).on("click", (mouseEventDetails: any, data: any) => {
+                        const countryName: string = data.properties.name;
+                        alert(data.properties.name);
+                    }).on("mouseenter", (mouseEventDetails: any, data: any) => {
+                        mouseEventDetails.path[0].style.opacity = "50%";
+                    }).on("mouseleave", (mouseEventDetails: any, data: any) => {
+                        mouseEventDetails.path[0].style.opacity = "100%";
                     });
         }
     )
@@ -166,4 +196,11 @@ interface CountryData {
     Warming: number;
     Error: number;
     Region: string;
+}
+
+interface CountryDetailData {
+    Temperature: number;
+    Year: number;
+    Month: string;
+    StationName: string;
 }

@@ -3,6 +3,7 @@ function init() {
     sessionStorage.setItem("currentPage", "1");
     var p1 = fetchChart1Data().then(function (data) { return buildChart1(data); });
     var p2 = fetchChart2Data().then(function (data) { return buildChart2(data); });
+    var p3 = fetchChart3Data();
     Promise.all([p1, p2]).then(function () {
         document.getElementById("loadingPage").hidden = true;
         document.getElementById("mainPage").hidden = false;
@@ -110,6 +111,25 @@ function fetchChart2Data() {
         return res;
     });
 }
+function fetchChart3Data() {
+    var res = {};
+    return d3.csv("https://raw.githubusercontent.com/boboPD/MCS-MPs/master/CS416/Proj2/data/data.csv").then(function (data) {
+        var _a, _b, _c, _d;
+        for (var _i = 0, data_3 = data; _i < data_3.length; _i++) {
+            var item = data_3[_i];
+            if (item["Country"] && !(item["Country"] in res)) {
+                res["Country"] = [];
+            }
+            res["Country"].push({
+                Month: (_a = item["Month"]) !== null && _a !== void 0 ? _a : "Unknown",
+                Year: parseInt((_b = item["Year"]) !== null && _b !== void 0 ? _b : "-1"),
+                Temperature: parseFloat((_c = item["Temperature"]) !== null && _c !== void 0 ? _c : "999"),
+                StationName: (_d = item["StationName"]) !== null && _d !== void 0 ? _d : "Unknown"
+            });
+        }
+        return res;
+    });
+}
 function buildChart2(data) {
     return d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson").then(function (topo) {
         var proj = d3.geoEquirectangular().scale(60).translate([200, 100]);
@@ -124,6 +144,13 @@ function buildChart2(data) {
                 return colorScale(data[d.properties.name].Warming);
             else
                 return "green";
+        }).on("click", function (mouseEventDetails, data) {
+            var countryName = data.properties.name;
+            alert(data.properties.name);
+        }).on("mouseenter", function (mouseEventDetails, data) {
+            mouseEventDetails.path[0].style.opacity = "50%";
+        }).on("mouseleave", function (mouseEventDetails, data) {
+            mouseEventDetails.path[0].style.opacity = "100%";
         });
     });
 }
