@@ -1,10 +1,11 @@
 "use strict";
+var complete_data;
 function init() {
     sessionStorage.setItem("currentPage", "1");
     var p1 = fetchChart1Data().then(function (data) { return buildChart1(data); });
     var p2 = fetchChart2Data().then(function (data) { return buildChart2(data); });
-    var p3 = fetchChart3Data();
-    Promise.all([p1, p2]).then(function () {
+    var p3 = fetchChart3Data().then(function (data) { return complete_data = data; });
+    Promise.all([p1, p2, p3]).then(function () {
         document.getElementById("loadingPage").hidden = true;
         document.getElementById("mainPage").hidden = false;
         d3.select("#page1div").classed("hiddenPage", false).classed("currentPage", true);
@@ -20,6 +21,9 @@ function isButtonReq(moveDirection) {
 }
 function updatePage(moveDirection) {
     var currentPage = getCurrentPage();
+    if (currentPage == 3) {
+        d3.select("#page3").selectAll("svg").html("");
+    }
     var nextPage = moveDirection == 'next' ? currentPage + 1 : currentPage - 1;
     d3.select("#page" + currentPage + "div").classed("hiddenPage", true).classed("currentPage", false);
     d3.select("#page" + nextPage + "div").classed("hiddenPage", false).classed("currentPage", true);
@@ -117,15 +121,17 @@ function fetchChart3Data() {
         var _a, _b, _c, _d;
         for (var _i = 0, data_3 = data; _i < data_3.length; _i++) {
             var item = data_3[_i];
-            if (item["Country"] && !(item["Country"] in res)) {
-                res["Country"] = [];
+            if (item["Country"]) {
+                if (!(item["Country"] in res)) {
+                    res[item["Country"]] = [];
+                }
+                res[item["Country"]].push({
+                    Month: (_a = item["Month"]) !== null && _a !== void 0 ? _a : "Unknown",
+                    Year: parseInt((_b = item["Year"]) !== null && _b !== void 0 ? _b : "-1"),
+                    Temperature: parseFloat((_c = item["Temperature"]) !== null && _c !== void 0 ? _c : "999"),
+                    StationName: (_d = item["StationName"]) !== null && _d !== void 0 ? _d : "Unknown"
+                });
             }
-            res["Country"].push({
-                Month: (_a = item["Month"]) !== null && _a !== void 0 ? _a : "Unknown",
-                Year: parseInt((_b = item["Year"]) !== null && _b !== void 0 ? _b : "-1"),
-                Temperature: parseFloat((_c = item["Temperature"]) !== null && _c !== void 0 ? _c : "999"),
-                StationName: (_d = item["StationName"]) !== null && _d !== void 0 ? _d : "Unknown"
-            });
         }
         return res;
     });
@@ -137,21 +143,99 @@ function buildChart2(data) {
         var colorScale = d3.scaleLinear()
             .domain([0, 4])
             .range(["blue", "red"]);
+        var tooltip = d3.select("body")
+            .append("div")
+            .classed("tooltip", true);
         var page2svg = d3.select("#page2").attr("viewBox", "0 0 400 300");
         page2svg.append("g").selectAll("path").data(topo.features).join("path")
             .attr("d", path).attr("fill", function (d) {
             if (data[d.properties.name])
                 return colorScale(data[d.properties.name].Warming);
             else
-                return "green";
+                return "darkgrey";
         }).on("click", function (mouseEventDetails, data) {
             var countryName = data.properties.name;
-            alert(data.properties.name);
+            buildChart3(countryName);
+            updatePage("next");
         }).on("mouseenter", function (mouseEventDetails, data) {
             mouseEventDetails.path[0].style.opacity = "50%";
+            tooltip.html(data.properties.name);
+            tooltip.style("visibility", "visible");
+        }).on("mousemove", function (mouseEventDetails, data) {
+            tooltip.style("top", (mouseEventDetails.pageY - 20) + "px").style("left", (mouseEventDetails.pageX + 10) + "px");
         }).on("mouseleave", function (mouseEventDetails, data) {
             mouseEventDetails.path[0].style.opacity = "100%";
+            tooltip.style("visibility", "hidden");
+            tooltip.html("");
         });
     });
+}
+function buildChart3(country) {
+    d3.select("#page3").selectAll("svg").data(["yearlyChart", "monthlyChart"]).enter().append("svg").attr("id", function (d) { return d; }).attr("width", "100%").attr("height", "500px");
+    var countrySpecificData = complete_data[country];
+    var yearlyData = getAvgTempByYear(countrySpecificData);
+    var minTemp = Math.min.apply(Math, yearlyData.map(function (obj) { return obj.AvgTemp; }));
+    var maxTemp = Math.max.apply(Math, yearlyData.map(function (obj) { return obj.AvgTemp; }));
+    var height = 500, width = 1000, padding = 70;
+    var xsChart1 = d3.scaleLinear().domain([1990, 2000]).range([0, width - 2 * padding]);
+    var ysChart1 = d3.scaleLinear().domain([minTemp, maxTemp]).range([height - 2 * padding, 0]);
+    var firstsvg = d3.select("#yearlyChart");
+    firstsvg.append("g").attr("transform", "translate(" + padding + ", " + (height - padding) + ")").call(d3.axisBottom(xsChart1).ticks(10));
+    firstsvg.append("text").attr("y", height - padding / 2).attr("x", width / 2).text("Year");
+    firstsvg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")").call(d3.axisLeft(ysChart1).ticks(10));
+    firstsvg.append("text").attr("y", 20).attr("x", (height + padding) / -2).text("Temperature").attr("transform", "rotate(-90)");
+    var line = d3.line().x(function (d) { return xsChart1(d.Year); }).y(function (d) { return ysChart1(d.AvgTemp); });
+    firstsvg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")").append("path").attr("d", line(yearlyData)).attr("stroke", "blue").attr("fill", "none");
+    var months = ["Jan", "Feb", "March", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    var colours = ["red", "blue", "green", "purple", "black", "grey", "darkgreen", "magenta", "brown", "slateblue", "grey1", "orange"];
+    var monthDataAvgOverCities = {};
+    var overallMinTemp = 1000;
+    var overallMaxTemp = -1000;
+    var _loop_1 = function (item) {
+        var monthData = countrySpecificData.filter(function (obj) { return obj.Month == item; });
+        monthDataAvgOverCities[item] = getAvgTempByYear(monthData);
+        var monthlyMinTemp = Math.min.apply(Math, monthDataAvgOverCities[item].map(function (obj) { return obj.AvgTemp; }));
+        var monthlyMaxTemp = Math.max.apply(Math, monthDataAvgOverCities[item].map(function (obj) { return obj.AvgTemp; }));
+        overallMinTemp = overallMinTemp > monthlyMinTemp ? monthlyMinTemp : overallMinTemp;
+        overallMaxTemp = overallMaxTemp < monthlyMaxTemp ? monthlyMaxTemp : overallMaxTemp;
+    };
+    for (var _i = 0, months_1 = months; _i < months_1.length; _i++) {
+        var item = months_1[_i];
+        _loop_1(item);
+    }
+    var xsChart2 = d3.scaleLinear().domain([1990, 2000]).range([0, width - 2 * padding]);
+    var ysChart2 = d3.scaleLinear().domain([overallMinTemp, overallMaxTemp]).range([height - 2 * padding, 0]);
+    var secondsvg = d3.select("#monthlyChart");
+    secondsvg.append("g").attr("transform", "translate(" + padding + ", " + (height - padding) + ")").call(d3.axisBottom(xsChart2).ticks(10));
+    secondsvg.append("text").attr("y", height - padding / 2).attr("x", width / 2).text("Year");
+    secondsvg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")").call(d3.axisLeft(ysChart2).ticks(10));
+    secondsvg.append("text").attr("y", 20).attr("x", (height + padding) / -2).text("Temperature").attr("transform", "rotate(-90)");
+    var monthline = d3.line().x(function (d) { return xsChart2(d.Year); }).y(function (d) { return ysChart2(d.AvgTemp); });
+    for (var i = 0; i < 12; i++) {
+        secondsvg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")").append("path").attr("d", monthline(monthDataAvgOverCities[months[i]])).attr("stroke", colours[i]).attr("fill", "none");
+    }
+}
+function getAvgTempByYear(data) {
+    var temp = data.reduce(function (result, currentObj) {
+        if (currentObj["Year"] in result) {
+            result[currentObj["Year"]].Temp += currentObj.Temperature;
+            result[currentObj["Year"]].Count++;
+        }
+        else {
+            result[currentObj["Year"]] = {
+                Temp: currentObj.Temperature,
+                Count: 1
+            };
+        }
+        return result;
+    }, {});
+    var finalResult = [];
+    for (var year in temp) {
+        finalResult.push({
+            AvgTemp: temp[year].Temp / temp[year].Count,
+            Year: parseInt(year)
+        });
+    }
+    return finalResult;
 }
 //# sourceMappingURL=index.js.map
