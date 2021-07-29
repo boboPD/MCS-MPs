@@ -190,8 +190,13 @@ function buildChart2(data: { [country: string]: CountryData}): Promise<any> {
                             return "darkgrey";
                     }).on("click", (mouseEventDetails: any, data: any) => {
                         const countryName: string = data.properties.name;
-                        buildChart3(countryName);
-                        updatePage("next");
+                        if (countryName in complete_data) {
+                            buildChart3(countryName);
+                            updatePage("next");
+                        } else {
+                            alert("Sorry could not find detailed temperature data for this country");
+                        }
+                        
                     }).on("mouseenter", (mouseEventDetails: any, data: any) => {
                         mouseEventDetails.path[0].style.opacity = "50%";
                         tooltip.html(data.properties.name);
@@ -216,12 +221,14 @@ function buildChart3(country: string) {
     const yearlyData: Chart3Model[] = getAvgTempByYear(countrySpecificData);
     const minTemp: number = Math.min(...yearlyData.map(obj => obj.AvgTemp));
     const maxTemp: number = Math.max(...yearlyData.map(obj => obj.AvgTemp));
+    const minYear: number = Math.min(...yearlyData.map(obj => obj.Year));
+    const maxYear: number = Math.max(...yearlyData.map(obj => obj.Year));
 
     const height = 500, width = 1000, padding = 70;
-    const xsChart1 = d3.scaleLinear().domain([1990, 2000]).range([0, width - 2*padding]);
+    const xsChart1 = d3.scaleLinear().domain([minYear, maxYear]).range([0, width - 2*padding]);
     const ysChart1 = d3.scaleLinear().domain([minTemp, maxTemp]).range([height - 2*padding, 0]);
 
-    const firstsvg = d3.select("#yearlyChart");//.attr("viewbox", `0 0 ${width} ${height}`);
+    const firstsvg = d3.select("#yearlyChart").attr("viewbox", `0 0 ${width} ${height}`);
 
     firstsvg.append("g").attr("transform", `translate(${padding}, ${height - padding})`).call(d3.axisBottom(xsChart1).ticks(10));
     firstsvg.append("text").attr("y", height - padding/2).attr("x", width/2).text("Year");
@@ -240,6 +247,8 @@ function buildChart3(country: string) {
 
     let overallMinTemp: number = 1000;
     let overallMaxTemp: number = -1000;
+    const minYearc2: number = Math.min(...yearlyData.map(obj => obj.Year));
+    const maxYearc2: number = Math.max(...yearlyData.map(obj => obj.Year));
 
     for (let item of months) {
         const monthData = countrySpecificData.filter((obj) => obj.Month == item);
@@ -252,9 +261,9 @@ function buildChart3(country: string) {
         overallMaxTemp = overallMaxTemp < monthlyMaxTemp ? monthlyMaxTemp : overallMaxTemp;
     }
 
-    const xsChart2 = d3.scaleLinear().domain([1990, 2000]).range([0, width - 2*padding]);
+    const xsChart2 = d3.scaleLinear().domain([minYearc2, maxYearc2]).range([0, width - 2*padding]);
     const ysChart2 = d3.scaleLinear().domain([overallMinTemp, overallMaxTemp]).range([height - 2*padding, 0])
-    const secondsvg = d3.select("#monthlyChart");//.attr("viewbox", `0 0 ${width} ${height}`);
+    const secondsvg = d3.select("#monthlyChart").attr("viewbox", `0 0 ${width} ${height}`);
 
     secondsvg.append("g").attr("transform", `translate(${padding}, ${height - padding})`).call(d3.axisBottom(xsChart2).ticks(10));
     secondsvg.append("text").attr("y", height - padding/2).attr("x", width/2).text("Year");
