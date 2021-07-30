@@ -147,6 +147,12 @@ function buildChart2(data) {
             .append("div")
             .classed("tooltip", true);
         var page2svg = d3.select("#page2").attr("viewBox", "0 0 400 300");
+        var legend = page2svg.append("g").attr("id", "legend2").attr("transform", "translate(180, 0)");
+        legend.append("text").text("0°C").attr("x", 0).attr("y", 4).classed("temp-legend", true);
+        legend.selectAll("rect").data(d3.range(0, 4, 0.05)).enter()
+            .append("rect").attr("fill", function (d) { return colorScale(d); }).attr("width", 0.5).attr("height", 5)
+            .attr("x", function (d, i) { return 7 + i * 0.5; });
+        legend.append("text").text("4°C").attr("x", 47).attr("y", 4).classed("temp-legend", true);
         page2svg.append("g").selectAll("path").data(topo.features).join("path")
             .attr("d", path).attr("fill", function (d) {
             if (data[d.properties.name])

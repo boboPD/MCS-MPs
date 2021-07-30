@@ -29,3 +29,7 @@
     visibility: hidden;
     background-color: white;
 }
+
+.temp-legend {
+    font-size: 4;
+}

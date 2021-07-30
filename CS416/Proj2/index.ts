@@ -179,9 +179,14 @@ function buildChart2(data: { [country: string]: CountryData}): Promise<any> {
             var tooltip = d3.select("body")
                             .append("div")
                             .classed("tooltip", true);
-                            //.text("a simple tooltip");
     
             const page2svg = d3.select("#page2").attr("viewBox", `0 0 400 300`);
+            const legend = page2svg.append("g").attr("id", "legend2").attr("transform", "translate(180, 0)");
+            legend.append("text").text("0°C").attr("x", 0).attr("y", 4).classed("temp-legend", true);
+            legend.selectAll("rect").data(d3.range(0, 4, 0.05)).enter()
+                                .append("rect").attr("fill", (d) => colorScale(d)).attr("width", 0.5).attr("height", 5)
+                                .attr("x", (d, i) => 7 + i * 0.5);
+            legend.append("text").text("4°C").attr("x", 47).attr("y", 4).classed("temp-legend", true);
             page2svg.append("g").selectAll("path").data(topo.features).join("path")
                     .attr("d", path).attr("fill", (d: any) => {
                         if(data[d.properties.name])
@@ -262,7 +267,7 @@ function buildChart3(country: string) {
     }
 
     const xsChart2 = d3.scaleLinear().domain([minYearc2, maxYearc2]).range([0, width - 2*padding]);
-    const ysChart2 = d3.scaleLinear().domain([overallMinTemp, overallMaxTemp]).range([height - 2*padding, 0])
+    const ysChart2 = d3.scaleLinear().domain([overallMinTemp, overallMaxTemp]).range([height - 2*padding, 0]);
     const secondsvg = d3.select("#monthlyChart").attr("viewbox", `0 0 ${width} ${height}`);
 
     secondsvg.append("g").attr("transform", `translate(${padding}, ${height - padding})`).call(d3.axisBottom(xsChart2).ticks(10));
