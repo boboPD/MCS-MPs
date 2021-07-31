@@ -202,12 +202,12 @@ function buildChart2(data: { [country: string]: CountryData}): Promise<any> {
                             alert("Sorry could not find detailed temperature data for this country");
                         }
                         
-                    }).on("mouseenter", (mouseEventDetails: any, data: any) => {
+                    }).on("mouseenter", (mouseEventDetails: any, clickData: any) => {
                         mouseEventDetails.path[0].style.opacity = "50%";
-                        tooltip.html(data.properties.name);
+                        tooltip.html(`Country: ${clickData.properties.name} <br /> Warming: ${data[clickData.properties.name].Warming}`);
                         tooltip.style("visibility", "visible");
                     }).on("mousemove", (mouseEventDetails: any, data: any) => {
-                        tooltip.style("top", (mouseEventDetails.pageY-20)+"px").style("left",(mouseEventDetails.pageX+10)+"px");
+                        tooltip.style("top", (mouseEventDetails.pageY-35)+"px").style("left",(mouseEventDetails.pageX+10)+"px");
                     }).on("mouseleave", (mouseEventDetails: any, data: any) => {
                         mouseEventDetails.path[0].style.opacity = "100%";
                         tooltip.style("visibility", "hidden");
@@ -249,6 +249,7 @@ function buildChart3(country: string) {
     const months = ["Jan", "Feb", "March", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const colours = ["red", "blue", "green", "purple", "black", "grey", "darkgreen", "magenta", "brown", "slateblue", "grey1", "orange"];
     const monthDataAvgOverCities: {[month: string]: Chart3Model[]} = {};
+    const legendWidth = 50;
 
     let overallMinTemp: number = 1000;
     let overallMaxTemp: number = -1000;
@@ -266,15 +267,20 @@ function buildChart3(country: string) {
         overallMaxTemp = overallMaxTemp < monthlyMaxTemp ? monthlyMaxTemp : overallMaxTemp;
     }
 
-    const xsChart2 = d3.scaleLinear().domain([minYearc2, maxYearc2]).range([0, width - 2*padding]);
+    const xsChart2 = d3.scaleLinear().domain([minYearc2, maxYearc2]).range([0, width - (2*padding + legendWidth)]);
     const ysChart2 = d3.scaleLinear().domain([overallMinTemp, overallMaxTemp]).range([height - 2*padding, 0]);
     const secondsvg = d3.select("#monthlyChart").attr("viewbox", `0 0 ${width} ${height}`);
 
     secondsvg.append("g").attr("transform", `translate(${padding}, ${height - padding})`).call(d3.axisBottom(xsChart2).ticks(10));
     secondsvg.append("text").attr("y", height - padding/2).attr("x", width/2).text("Year");
 
-    secondsvg.append("g").attr("transform", `translate(${padding}, ${padding})`) .call(d3.axisLeft(ysChart2).ticks(10));
+    secondsvg.append("g").attr("transform", `translate(${padding}, ${padding})`).call(d3.axisLeft(ysChart2).ticks(10));
     secondsvg.append("text").attr("y", 20).attr("x", (height+padding)/-2).text("Temperature").attr("transform", "rotate(-90)");
+
+    const legend = secondsvg.append("g").attr("transform", `translate(${width - (padding + legendWidth) + 20}, ${height/2 - padding})`).classed("legend", true);
+    const legendItems = legend.selectAll("g").data(d3.range(12)).enter().append("g");
+    legendItems.append("rect").attr("width", 12).attr("height", 12).attr("fill", d => colours[d]).attr("y", d => 20 * d);
+    legendItems.append("text").attr("x", 17).attr("y", d => 20 * d + 12).text(d => months[d]);
 
     const monthline = d3.line().x(d => xsChart2(d.Year)).y(d => ysChart2(d.AvgTemp));
 

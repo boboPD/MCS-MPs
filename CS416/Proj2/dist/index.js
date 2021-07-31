@@ -168,12 +168,12 @@ function buildChart2(data) {
             else {
                 alert("Sorry could not find detailed temperature data for this country");
             }
-        }).on("mouseenter", function (mouseEventDetails, data) {
+        }).on("mouseenter", function (mouseEventDetails, clickData) {
             mouseEventDetails.path[0].style.opacity = "50%";
-            tooltip.html(data.properties.name);
+            tooltip.html("Country: " + clickData.properties.name + " <br /> Warming: " + data[clickData.properties.name].Warming);
             tooltip.style("visibility", "visible");
         }).on("mousemove", function (mouseEventDetails, data) {
-            tooltip.style("top", (mouseEventDetails.pageY - 20) + "px").style("left", (mouseEventDetails.pageX + 10) + "px");
+            tooltip.style("top", (mouseEventDetails.pageY - 35) + "px").style("left", (mouseEventDetails.pageX + 10) + "px");
         }).on("mouseleave", function (mouseEventDetails, data) {
             mouseEventDetails.path[0].style.opacity = "100%";
             tooltip.style("visibility", "hidden");
@@ -202,6 +202,7 @@ function buildChart3(country) {
     var months = ["Jan", "Feb", "March", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     var colours = ["red", "blue", "green", "purple", "black", "grey", "darkgreen", "magenta", "brown", "slateblue", "grey1", "orange"];
     var monthDataAvgOverCities = {};
+    var legendWidth = 50;
     var overallMinTemp = 1000;
     var overallMaxTemp = -1000;
     var minYearc2 = Math.min.apply(Math, yearlyData.map(function (obj) { return obj.Year; }));
@@ -218,13 +219,17 @@ function buildChart3(country) {
         var item = months_1[_i];
         _loop_1(item);
     }
-    var xsChart2 = d3.scaleLinear().domain([minYearc2, maxYearc2]).range([0, width - 2 * padding]);
+    var xsChart2 = d3.scaleLinear().domain([minYearc2, maxYearc2]).range([0, width - (2 * padding + legendWidth)]);
     var ysChart2 = d3.scaleLinear().domain([overallMinTemp, overallMaxTemp]).range([height - 2 * padding, 0]);
     var secondsvg = d3.select("#monthlyChart").attr("viewbox", "0 0 " + width + " " + height);
     secondsvg.append("g").attr("transform", "translate(" + padding + ", " + (height - padding) + ")").call(d3.axisBottom(xsChart2).ticks(10));
     secondsvg.append("text").attr("y", height - padding / 2).attr("x", width / 2).text("Year");
     secondsvg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")").call(d3.axisLeft(ysChart2).ticks(10));
     secondsvg.append("text").attr("y", 20).attr("x", (height + padding) / -2).text("Temperature").attr("transform", "rotate(-90)");
+    var legend = secondsvg.append("g").attr("transform", "translate(" + (width - (padding + legendWidth) + 20) + ", " + (height / 2 - padding) + ")").classed("legend", true);
+    var legendItems = legend.selectAll("g").data(d3.range(12)).enter().append("g");
+    legendItems.append("rect").attr("width", 12).attr("height", 12).attr("fill", function (d) { return colours[d]; }).attr("y", function (d) { return 20 * d; });
+    legendItems.append("text").attr("x", 17).attr("y", function (d) { return 20 * d + 12; }).text(function (d) { return months[d]; });
     var monthline = d3.line().x(function (d) { return xsChart2(d.Year); }).y(function (d) { return ysChart2(d.AvgTemp); });
     for (var i = 0; i < 12; i++) {
         secondsvg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")").append("path").attr("d", monthline(monthDataAvgOverCities[months[i]])).attr("stroke", colours[i]).attr("fill", "none");
