@@ -17,12 +17,24 @@ function getCurrentPage() {
 }
 function isButtonReq(moveDirection) {
     var currentPage = getCurrentPage();
-    return !((currentPage == 1 && moveDirection == "previous") || (currentPage == 3 && moveDirection == "next"));
+    if (currentPage == 2 && moveDirection == "next")
+        return false;
+    else
+        return !((currentPage == 1 && moveDirection == "previous") || (currentPage == 3 && moveDirection == "next"));
+}
+function toggleCityDisplay() {
+    var isHidden = d3.select("#cities-section").classed("hiddenPage");
+    d3.select("#cities-section").classed("hiddenPage", !isHidden);
+    if (isHidden)
+        d3.select("#toggleCityDisplayBtn").html("Hide Locations");
+    else
+        d3.select("#toggleCityDisplayBtn").html("Show Locations");
 }
 function updatePage(moveDirection) {
     var currentPage = getCurrentPage();
     if (currentPage == 3) {
         d3.select("#page3").selectAll("svg").html("");
+        d3.select("#cities").html("");
     }
     var nextPage = moveDirection == 'next' ? currentPage + 1 : currentPage - 1;
     d3.select("#page" + currentPage + "div").classed("hiddenPage", true).classed("currentPage", false);
@@ -146,7 +158,7 @@ function buildChart2(data) {
         var tooltip = d3.select("body")
             .append("div")
             .classed("tooltip", true);
-        var page2svg = d3.select("#page2").attr("viewBox", "0 0 400 300");
+        var page2svg = d3.select("#page2").attr("viewBox", "0 0 400 200");
         var legend = page2svg.append("g").attr("id", "legend2").attr("transform", "translate(180, 0)");
         legend.append("text").text("0°C").attr("x", 0).attr("y", 4).classed("temp-legend", true);
         legend.selectAll("rect").data(d3.range(0, 4, 0.05)).enter()
@@ -162,6 +174,8 @@ function buildChart2(data) {
         }).on("click", function (mouseEventDetails, data) {
             var countryName = data.properties.name;
             if (countryName in complete_data) {
+                d3.select("#page3div .chart-description h4").html("Annual and monthly temperatures for " + countryName);
+                addCityNames(countryName);
                 buildChart3(countryName);
                 updatePage("next");
             }
@@ -169,20 +183,23 @@ function buildChart2(data) {
                 alert("Sorry could not find detailed temperature data for this country");
             }
         }).on("mouseenter", function (mouseEventDetails, clickData) {
-            mouseEventDetails.path[0].style.opacity = "50%";
+            mouseEventDetails.srcElement.style.opacity = "50%";
             tooltip.html("Country: " + clickData.properties.name + " <br /> Warming: " + data[clickData.properties.name].Warming);
             tooltip.style("visibility", "visible");
         }).on("mousemove", function (mouseEventDetails, data) {
-            tooltip.style("top", (mouseEventDetails.pageY - 35) + "px").style("left", (mouseEventDetails.pageX + 10) + "px");
+            tooltip.style("top", (mouseEventDetails.pageY - 50) + "px").style("left", (mouseEventDetails.pageX + 20) + "px");
         }).on("mouseleave", function (mouseEventDetails, data) {
-            mouseEventDetails.path[0].style.opacity = "100%";
+            mouseEventDetails.srcElement.style.opacity = "100%";
             tooltip.style("visibility", "hidden");
             tooltip.html("");
         });
     });
 }
+function addCityNames(country) {
+    var cities = new Set(complete_data[country].map(function (obj) { return obj.StationName; }));
+    d3.select("#cities").selectAll("li").data(cities).enter().append("li").html(function (d) { return d; });
+}
 function buildChart3(country) {
-    d3.select("#page3").selectAll("svg").data(["yearlyChart", "monthlyChart"]).enter().append("svg").attr("id", function (d) { return d; }).attr("width", "100%").attr("height", "500px");
     var countrySpecificData = complete_data[country];
     var yearlyData = getAvgTempByYear(countrySpecificData);
     var minTemp = Math.min.apply(Math, yearlyData.map(function (obj) { return obj.AvgTemp; }));

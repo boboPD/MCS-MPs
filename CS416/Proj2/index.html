@@ -11,29 +11,69 @@
                 <h1>Loading data...</h1>
             </div>
             <div id="mainPage" hidden>
+                <div>
+                    <h1 class="proj-title">A report on Global Warming</h2>
+                    <p>
+                        Over the last century human activity has been a major factor in the changing environment on Earth. One of the major concerns of our time is global warming and through
+                        this simple visualisation I want show users how the surface temperature of our planet has been changing over the years. All of the data for this visualisation was taken
+                        from the <a href="http://berkeleyearth.org/archive/source-files/">Berkely Earth project</a>.
+                    </p>
+                    <p>
+                        <i>
+                            Disclaimer: The visualisations presented here are likely an oversimplified representation of the actual data and so please do not treat this as an authoritative source of 
+                            information on the subject. I have tried to be as accurate as possible but given that this is not my area of expertise, the methods of data summarisation/cleaning that 
+                            I used might be faulty in some cases.
+                        </i>
+                    </p>
+                    <hr />
+                </div>
                 <div id="charts">
                     <div id="page1div" class="hiddenPage">
                         <div class="chart-description">
-                            <h3 class="chart-title">This chart shows the increase in global average surface temperature from the Year 1750 till 2020</h4>
-                            <span>This data was taken from the <a href="http://berkeleyearth.org/archive/source-files/">Berkely Earth project</a>.</span>
+                            <h4 class="chart-title">Average surface temperature from the Year 1750 - 2020</h4>
+                            <p>
+                                This line chart is showing the average global surface temperature (°C) of the planet from 1750 - 2020. The blue line shows the actual measure and the grey lines
+                                indicate the 95% confidence interval of the measure. As we can see, during the early years the margin of error was high, likely due to small number of measurements and
+                                lack of precise equipment. However, as we approach the 1900s the error comes significantly down and by the 21<sup>st</sup> century it is negligible.
+                            </p>
                         </div>
                         <svg id="page1" class="chart-holder"></svg>
                     </div>
                     <div id="page2div" class="hiddenPage">
                         <div class="chart-description">
-                            <h3 class="chart-title">This choropleth shows how much each country's average temperature has increased since 1960.</h4>
+                            <h4 class="chart-title">Increase in temperature by country since 1960.</h4>
+                            <p>
+                                This choropleth shows how much each country's average temperature has increased since 1960. Click on a country to see more detailed information on it (Avoid the 
+                                African countries as the detailed dataset I have does not include them).
+                            </p>
                         </div>
                         <svg id="page2" class="chart-holder"></svg>
                     </div>
                     <div id="page3div" class="hiddenPage">
                         <div class="chart-description">
-                            <h3 class="chart-title">This page shows the details of the country selected for the years 1991 through 2000.</h4>
+                            <h4 class="chart-title"></h4>
+                            <p>
+                                The data below is aggregated from temperature measurements in multiple locations from across the chosen country. Click on the button below to show the list of locations.
+                            </p>
+                            <button id="toggleCityDisplayBtn" onclick="toggleCityDisplay()">Show Locations</button>
+                            <div id="cities-section" class="hiddenPage">
+                                <ul id="cities"></ul>
+                            </div>
                         </div>
-                        <div id="page3"></div>
+                        <div id="page3">
+                            <p>
+                                The chart below shows the average temperature of the country by year.
+                            </p>
+                            <svg id="yearlyChart" width="100%" height="500px"></svg>
+                            <p>
+                                This second chart shows the temperature aggregated by month.
+                            </p>
+                            <svg id="monthlyChart" width="100%" height="500px"></svg>
+                        </div>
                     </div>
                 </div>
-                <div id="navigation">
-                    <button id="previousBtn" onclick="updatePage('previous')">Previous</button>
+                <div id="navigation" class="nav-section">
+                    <button id="previousBtn" onclick="updatePage('previous')" disabled>Previous</button>
                     <button id="nextBtn" onclick="updatePage('next')">Next</button>
                 </div>
             </div>

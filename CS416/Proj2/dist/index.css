@@ -1,13 +1,25 @@
+body {
+    margin-left: 15%;
+    margin-right: 15%;
+    margin-top: 30px;
+}
+
+#loadingPage,
+.proj-title {
+    text-align: center;
+}
+
 .hiddenPage{
     display: none;
 }
 
-.currentPage {
-    padding: 20px;
+#page2 {
+    margin-top: 20px;
 }
 
-#charts {
-    width: 100%;
+.currentPage {
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 #mainPage {
@@ -19,17 +31,58 @@
     font: italic 13px sans-serif; 
 }
 
-.chart-description {
-    margin: 10px;
-}
-
 .tooltip {
     position: absolute;
     z-index: 10;
     visibility: hidden;
-    background-color: white;
+    background-color: lightgrey;
+    padding: 5px;
+    border: darkgrey;
+    border-radius: 2px;
+    border-width: 2px;
 }
 
 .temp-legend {
     font-size: 4;
+}
+
+button {
+    margin: 10px;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    border: 1px solid transparent;
+    padding: 6px 12px;
+    font-size: 14px;
+    line-height: 1.42857143;
+    border-radius: 4px;
+    color: #fff;
+    background-color: #337ab7;
+    border-color: #2e6da4;
+}
+
+button:hover {
+    background-color: #255d8e;
+    border-color: #255d8e;
+}
+
+button:disabled {
+    background-color: #648bae;
+    opacity: 0.5;
+}
+
+.nav-section {
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+#cities {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+li {
+    margin-right: 30px;
 }

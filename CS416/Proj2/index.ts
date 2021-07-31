@@ -20,7 +20,21 @@ function getCurrentPage(): number {
 
 function isButtonReq(moveDirection: NavigationState): boolean {
     const currentPage: number = getCurrentPage();
-    return !((currentPage == 1 && moveDirection == "previous") || (currentPage == 3 && moveDirection == "next"));
+
+    if (currentPage == 2 && moveDirection == "next")
+        return false;
+    else
+        return !((currentPage == 1 && moveDirection == "previous") || (currentPage == 3 && moveDirection == "next"));
+}
+
+function toggleCityDisplay() {
+    const isHidden = d3.select("#cities-section").classed("hiddenPage");
+    d3.select("#cities-section").classed("hiddenPage", !isHidden);
+
+    if (isHidden)
+        d3.select("#toggleCityDisplayBtn").html("Hide Locations");
+    else
+        d3.select("#toggleCityDisplayBtn").html("Show Locations");
 }
 
 function updatePage(moveDirection: NavigationState): void{
@@ -28,6 +42,7 @@ function updatePage(moveDirection: NavigationState): void{
 
     if (currentPage == 3) {
         d3.select("#page3").selectAll("svg").html("");
+        d3.select("#cities").html("");
     }
 
     const nextPage = moveDirection == 'next' ? currentPage + 1 : currentPage - 1;
@@ -180,7 +195,7 @@ function buildChart2(data: { [country: string]: CountryData}): Promise<any> {
                             .append("div")
                             .classed("tooltip", true);
     
-            const page2svg = d3.select("#page2").attr("viewBox", `0 0 400 300`);
+            const page2svg = d3.select("#page2").attr("viewBox", `0 0 400 200`);
             const legend = page2svg.append("g").attr("id", "legend2").attr("transform", "translate(180, 0)");
             legend.append("text").text("0°C").attr("x", 0).attr("y", 4).classed("temp-legend", true);
             legend.selectAll("rect").data(d3.range(0, 4, 0.05)).enter()
@@ -196,6 +211,8 @@ function buildChart2(data: { [country: string]: CountryData}): Promise<any> {
                     }).on("click", (mouseEventDetails: any, data: any) => {
                         const countryName: string = data.properties.name;
                         if (countryName in complete_data) {
+                            d3.select("#page3div .chart-description h4").html("Annual and monthly temperatures for " + countryName);
+                            addCityNames(countryName);
                             buildChart3(countryName);
                             updatePage("next");
                         } else {
@@ -203,13 +220,13 @@ function buildChart2(data: { [country: string]: CountryData}): Promise<any> {
                         }
                         
                     }).on("mouseenter", (mouseEventDetails: any, clickData: any) => {
-                        mouseEventDetails.path[0].style.opacity = "50%";
+                        mouseEventDetails.srcElement.style.opacity = "50%";
                         tooltip.html(`Country: ${clickData.properties.name} <br /> Warming: ${data[clickData.properties.name].Warming}`);
                         tooltip.style("visibility", "visible");
                     }).on("mousemove", (mouseEventDetails: any, data: any) => {
-                        tooltip.style("top", (mouseEventDetails.pageY-35)+"px").style("left",(mouseEventDetails.pageX+10)+"px");
+                        tooltip.style("top", (mouseEventDetails.pageY-50)+"px").style("left",(mouseEventDetails.pageX+20)+"px");
                     }).on("mouseleave", (mouseEventDetails: any, data: any) => {
-                        mouseEventDetails.path[0].style.opacity = "100%";
+                        mouseEventDetails.srcElement.style.opacity = "100%";
                         tooltip.style("visibility", "hidden");
                         tooltip.html("");
                     });
@@ -217,9 +234,12 @@ function buildChart2(data: { [country: string]: CountryData}): Promise<any> {
     );
 }
 
-function buildChart3(country: string) {
-    d3.select("#page3").selectAll("svg").data(["yearlyChart", "monthlyChart"]).enter().append("svg").attr("id", (d) => d).attr("width", "100%").attr("height", "500px");
+function addCityNames(country: string) {
+    let cities = new Set(complete_data[country].map(obj => obj.StationName));
+    d3.select("#cities").selectAll("li").data(cities).enter().append("li").html(d => d);
+}
 
+function buildChart3(country: string) {
     const countrySpecificData: CountryDetailData[] = complete_data[country];
 
     // Build the first chart
