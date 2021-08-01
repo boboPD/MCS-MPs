@@ -44,7 +44,7 @@ function updatePage(moveDirection) {
     document.getElementById("nextBtn").disabled = !isButtonReq("next");
 }
 function buildChart1(data) {
-    var height = 500, width = 1000, padding = 20;
+    var height = 550, width = 1050, padding = 70;
     var xs = d3.scaleLinear().domain([1740, 2020]).range([0, width - 2 * padding]);
     var ys = d3.scaleLinear().domain([4, 12]).range([height - 2 * padding, 0]);
     var page1svg = d3.select("#page1").attr("viewBox", "0 0 " + width + " " + height);
@@ -56,7 +56,9 @@ function buildChart1(data) {
         return [xs(item.Year), ys(item.temperature - item.uncertainty)];
     });
     page1svg.append("g").attr("transform", "translate(" + padding + ", " + (height - padding) + ")").call(d3.axisBottom(xs).ticks(28));
+    page1svg.append("text").attr("x", (width / 2) - padding).attr("y", height - padding / 2).text("Year");
     page1svg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")").call(d3.axisLeft(ys));
+    page1svg.append("text").attr("y", 50).attr("x", (height + padding) / -2).text("Temperature (°C)").attr("transform", "rotate(-90)");
     var linegrp = page1svg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")");
     linegrp.append("g").append("path").attr("d", line(data)).attr("stroke", "blue").attr("fill", "none");
     linegrp.append("g").append("path").attr("d", d3.line()(temphighs)).attr("stroke", "lightgray").attr("fill", "none");
@@ -213,7 +215,7 @@ function buildChart3(country) {
     firstsvg.append("g").attr("transform", "translate(" + padding + ", " + (height - padding) + ")").call(d3.axisBottom(xsChart1).ticks(10));
     firstsvg.append("text").attr("y", height - padding / 2).attr("x", width / 2).text("Year");
     firstsvg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")").call(d3.axisLeft(ysChart1).ticks(10));
-    firstsvg.append("text").attr("y", 20).attr("x", (height + padding) / -2).text("Temperature").attr("transform", "rotate(-90)");
+    firstsvg.append("text").attr("y", 20).attr("x", (height + padding) / -2).text("Temperature (°C)").attr("transform", "rotate(-90)");
     var line = d3.line().x(function (d) { return xsChart1(d.Year); }).y(function (d) { return ysChart1(d.AvgTemp); });
     firstsvg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")").append("path").attr("d", line(yearlyData)).attr("stroke", "blue").attr("fill", "none");
     var months = ["Jan", "Feb", "March", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -242,7 +244,7 @@ function buildChart3(country) {
     secondsvg.append("g").attr("transform", "translate(" + padding + ", " + (height - padding) + ")").call(d3.axisBottom(xsChart2).ticks(10));
     secondsvg.append("text").attr("y", height - padding / 2).attr("x", width / 2).text("Year");
     secondsvg.append("g").attr("transform", "translate(" + padding + ", " + padding + ")").call(d3.axisLeft(ysChart2).ticks(10));
-    secondsvg.append("text").attr("y", 20).attr("x", (height + padding) / -2).text("Temperature").attr("transform", "rotate(-90)");
+    secondsvg.append("text").attr("y", 20).attr("x", (height + padding) / -2).text("Temperature (°C)").attr("transform", "rotate(-90)");
     var legend = secondsvg.append("g").attr("transform", "translate(" + (width - (padding + legendWidth) + 20) + ", " + (height / 2 - padding) + ")").classed("legend", true);
     var legendItems = legend.selectAll("g").data(d3.range(12)).enter().append("g");
     legendItems.append("rect").attr("width", 12).attr("height", 12).attr("fill", function (d) { return colours[d]; }).attr("y", function (d) { return 20 * d; });

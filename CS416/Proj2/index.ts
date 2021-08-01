@@ -57,7 +57,7 @@ function updatePage(moveDirection: NavigationState): void{
 }
 
 function buildChart1(data: Chart1DataModel[]) {
-    const height = 500, width = 1000, padding = 20;
+    const height = 550, width = 1050, padding = 70;
     const xs = d3.scaleLinear().domain([1740, 2020]).range([0, width - 2 * padding]);
     const ys = d3.scaleLinear().domain([4, 12]).range([height - 2 * padding, 0]);
 
@@ -72,7 +72,10 @@ function buildChart1(data: Chart1DataModel[]) {
     });
 
     page1svg.append("g").attr("transform", `translate(${padding}, ${height - padding})`).call(d3.axisBottom(xs).ticks(28));
+    page1svg.append("text").attr("x", (width/2) - padding).attr("y", height - padding/2).text("Year");
+
     page1svg.append("g").attr("transform", `translate(${padding}, ${padding})`).call(d3.axisLeft(ys));
+    page1svg.append("text").attr("y", 50).attr("x", (height+padding)/-2).text("Temperature (°C)").attr("transform", "rotate(-90)");
 
     const linegrp = page1svg.append("g").attr("transform", `translate(${padding}, ${padding})`);
     linegrp.append("g").append("path").attr("d", line(data)).attr("stroke", "blue").attr("fill", "none");
@@ -218,7 +221,6 @@ function buildChart2(data: { [country: string]: CountryData}): Promise<any> {
                         } else {
                             alert("Sorry could not find detailed temperature data for this country");
                         }
-                        
                     }).on("mouseenter", (mouseEventDetails: any, clickData: any) => {
                         mouseEventDetails.srcElement.style.opacity = "50%";
                         tooltip.html(`Country: ${clickData.properties.name} <br /> Warming: ${data[clickData.properties.name].Warming}`);
@@ -259,7 +261,7 @@ function buildChart3(country: string) {
     firstsvg.append("text").attr("y", height - padding/2).attr("x", width/2).text("Year");
 
     firstsvg.append("g").attr("transform", `translate(${padding}, ${padding})`).call(d3.axisLeft(ysChart1).ticks(10));
-    firstsvg.append("text").attr("y", 20).attr("x", (height+padding)/-2).text("Temperature").attr("transform", "rotate(-90)");
+    firstsvg.append("text").attr("y", 20).attr("x", (height+padding)/-2).text("Temperature (°C)").attr("transform", "rotate(-90)");
 
     const line = d3.line().x(d => xsChart1(d.Year)).y(d => ysChart1(d.AvgTemp));
 
@@ -295,7 +297,7 @@ function buildChart3(country: string) {
     secondsvg.append("text").attr("y", height - padding/2).attr("x", width/2).text("Year");
 
     secondsvg.append("g").attr("transform", `translate(${padding}, ${padding})`).call(d3.axisLeft(ysChart2).ticks(10));
-    secondsvg.append("text").attr("y", 20).attr("x", (height+padding)/-2).text("Temperature").attr("transform", "rotate(-90)");
+    secondsvg.append("text").attr("y", 20).attr("x", (height+padding)/-2).text("Temperature (°C)").attr("transform", "rotate(-90)");
 
     const legend = secondsvg.append("g").attr("transform", `translate(${width - (padding + legendWidth) + 20}, ${height/2 - padding})`).classed("legend", true);
     const legendItems = legend.selectAll("g").data(d3.range(12)).enter().append("g");
